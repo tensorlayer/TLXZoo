@@ -5,5 +5,5 @@
 </a>
 
 Pre-trained models based on TensorLayerX. 
-TensorLayerX is a multi-backend AI framework, which can run on almost all operation systems and AI hardwares, and support hybrid-framework programming. The currently version supports TensorFlow, MindSpore, PaddlePaddle and PyTorch(partial) as the backends.[layer list](https://shimo.im/sheets/kJGCCTxXvqj99RGV/F5m5Z). 
+TensorLayerX is a multi-backend AI framework, which can run on almost all operation systems and AI hardwares, and support hybrid-framework programming. The currently version supports TensorFlow, MindSpore, PaddlePaddle, PyTorch, OneFlow and Jittor as the backends.
 
