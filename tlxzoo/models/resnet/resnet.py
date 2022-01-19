@@ -12,6 +12,8 @@ from tensorlayerx.nn import Module, SequentialLayer
 import os
 import tensorlayerx as tlx
 
+__all__ = ["ResNet"]
+
 block_names = ['2a', '2b', '2c', '3a', '3b', '3c', '3d', '4a', '4b', '4c', '4d', '4e', '4f', '5a', '5b', '5c'] + [
     'avg_pool', 'fc1000']
 block_filters = [[64, 64, 256], [128, 128, 512], [256, 256, 1024], [512, 512, 2048]]
