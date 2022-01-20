@@ -1,9 +1,9 @@
-from ...config.config import BaseConfig
+from ...config.config import BaseModelConfig
 
 weights_url = {'link': 'https://pan.baidu.com/s/1MC1dmEwpxsdgHO1MZ8fYRQ', 'password': 'idsz'}
 
 
-class YOLOv4Config(BaseConfig):
+class YOLOv4Config(BaseModelConfig):
     model_type = "yolov4"
 
     def __init__(

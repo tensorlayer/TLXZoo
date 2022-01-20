@@ -1,4 +1,4 @@
-from ...config.config import BaseConfig
+from ...config.config import BaseModelConfig
 
 ResNet_PRETRAINED_CONFIG = {
     "resnet50": ("resnet50_weights_tf_dim_ordering_tf_kernels.h5",
@@ -6,7 +6,7 @@ ResNet_PRETRAINED_CONFIG = {
 }
 
 
-class ResNetConfig(BaseConfig):
+class ResNetConfig(BaseModelConfig):
     model_type = "resnet"
 
     def __init__(

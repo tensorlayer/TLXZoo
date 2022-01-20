@@ -20,7 +20,7 @@ in read the docs website.
 beforehand. Distorted images might end up being misclassified. One way of safely
 feeding images of multiple sizes is by doing center cropping.
 """
-from ..modeling import BaseModule
+from ..model import BaseModule
 from ...utils.registry import Registers
 
 import os
@@ -30,6 +30,8 @@ from tensorlayerx import logging
 from tensorlayerx.files import assign_weights, maybe_download_and_extract
 from tensorlayerx.nn import (BatchNorm, Conv2d, Dense, Flatten, SequentialLayer, MaxPool2d)
 from tensorlayerx.nn import Module
+from ...utils.output import BaseModelOutput
+from dataclasses import dataclass
 
 __all__ = ['VGG']
 
@@ -40,17 +42,22 @@ layer_names = [
 ]
 
 
-def make_layers(config, batch_norm=False, end_with='outputs'):
+@dataclass
+class VGGModelOutput(BaseModelOutput):
+    ...
+
+
+def make_layers(layer_config, config):
     layer_list = []
     is_end = False
-    for layer_group_idx, layer_group in enumerate(config):
+    for layer_group_idx, layer_group in enumerate(layer_config):
         if isinstance(layer_group, list):
             for idx, layer in enumerate(layer_group):
                 layer_name = layer_names[layer_group_idx][idx]
                 n_filter = layer
                 if idx == 0:
                     if layer_group_idx > 0:
-                        in_channels = config[layer_group_idx - 2][-1]
+                        in_channels = layer_config[layer_group_idx - 2][-1]
                     else:
                         in_channels = 3
                 else:
@@ -61,9 +68,9 @@ def make_layers(config, batch_norm=False, end_with='outputs'):
                         in_channels=in_channels, name=layer_name
                     )
                 )
-                if batch_norm:
+                if config.batch_norm:
                     layer_list.append(BatchNorm(num_features=n_filter))
-                if layer_name == end_with:
+                if layer_name == config.end_with:
                     is_end = True
                     break
         else:
@@ -71,14 +78,16 @@ def make_layers(config, batch_norm=False, end_with='outputs'):
             if layer_group == 'M':
                 layer_list.append(MaxPool2d(filter_size=(2, 2), strides=(2, 2), padding='SAME', name=layer_name))
             elif layer_group == 'O':
-                layer_list.append(Dense(n_units=1000, in_channels=4096, name=layer_name))
+                layer_list.append(Dense(n_units=1000, in_channels=config.fc2_units, name=layer_name))
             elif layer_group == 'F':
                 layer_list.append(Flatten(name='flatten'))
             elif layer_group == 'fc1':
-                layer_list.append(Dense(n_units=4096, act=tlx.ReLU, in_channels=512 * 7 * 7, name=layer_name))
+                layer_list.append(
+                    Dense(n_units=config.fc1_units, act=tlx.ReLU, in_channels=512 * 7 * 7, name=layer_name))
             elif layer_group == 'fc2':
-                layer_list.append(Dense(n_units=4096, act=tlx.ReLU, in_channels=4096, name=layer_name))
-            if layer_name == end_with:
+                layer_list.append(
+                    Dense(n_units=config.fc2_units, act=tlx.ReLU, in_channels=config.fc1_units, name=layer_name))
+            if layer_name == config.end_with:
                 is_end = True
         if is_end:
             break
@@ -92,16 +101,15 @@ class VGG(BaseModule):
 
         self.end_with = config.end_with
         self.batch_norm = config.batch_norm
-        self.end_with = config.end_with
 
-        self.make_layer = make_layers(config.layers, self.batch_norm, self.end_with)
+        self.make_layer = make_layers(config.layers, config)
 
-    def forward(self, inputs):
+    def forward(self, pixels):
         """
-        inputs : tensor
+        pixel : tensor
             Shape [None, 224, 224, 3], value range [0, 1].
         """
 
-        inputs = inputs * 255 - np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape([1, 1, 1, 3])
-        out = self.make_layer(inputs)
-        return out
+        pixels = pixels * 255 - np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape([1, 1, 1, 3])
+        out = self.make_layer(pixels)
+        return VGGModelOutput(output=out)

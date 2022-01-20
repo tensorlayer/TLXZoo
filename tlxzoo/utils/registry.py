@@ -59,5 +59,6 @@ class Registers():  # pylint: disable=invalid-name, too-few-public-methods
         raise RuntimeError("Registries is not intended to be instantiated")
 
     models = Register('models')
+    tasks = Register('tasks')
 
 

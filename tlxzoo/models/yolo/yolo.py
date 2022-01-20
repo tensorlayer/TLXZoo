@@ -3,7 +3,7 @@
 - [tensorflow-yolov4-tflite](
     https://github.com/hunglc007/tensorflow-yolov4-tflite)
 """
-from ..modeling import BaseModule
+from ..model import BaseModule
 from ...utils.registry import Registers
 import numpy as np
 import tensorlayerx as tlx

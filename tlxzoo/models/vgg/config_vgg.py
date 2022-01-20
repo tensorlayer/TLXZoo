@@ -1,4 +1,4 @@
-from ...config.config import BaseConfig
+from ...config.config import BaseModelConfig
 
 cfg = {
     'A': [[64], 'M', [128], 'M', [256, 256], 'M', [512, 512], 'M', [512, 512], 'M', 'F', 'fc1', 'fc2', 'O'],
@@ -34,18 +34,22 @@ model_urls = {
 model_saved_name = {'vgg16': 'vgg16_weights.npz', 'vgg19': 'vgg19.npy'}
 
 
-class VGGConfig(BaseConfig):
+class VGGConfig(BaseModelConfig):
     model_type = ""
 
     def __init__(
             self,
-            end_with='outputs',
+            end_with='fc2_relu',
+            fc2_units=4096,
+            fc1_units=4096,
             batch_norm=False,
             layers=None,
             **kwargs
     ):
         self.end_with = end_with
         self.batch_norm = batch_norm
+        self.fc2_units = fc2_units
+        self.fc1_units = fc1_units
         if layers is None:
             self.layers = cfg[mapped_cfg[self.model_type]]
         else:
@@ -57,6 +61,14 @@ class VGGConfig(BaseConfig):
             pretrained_path=pretrained_path,
             **kwargs,
         )
+
+    def _get_last_output_size(self):
+        if self.end_with == "fc2_relu":
+            return None, self.fc2_units
+        elif self.end_with == "fc1_relu":
+            return None, self.fc1_units
+        else:
+            raise ValueError(f"end_with must in ['fc1_relu', 'fc2_relu'], get {self.end_with}")
 
 
 class VGG16Config(VGGConfig):

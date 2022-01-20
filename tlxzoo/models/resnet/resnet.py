@@ -3,7 +3,7 @@
 - [Deep Residual Learning for Image Recognition](
     https://arxiv.org/abs/1512.03385) (CVPR 2016 Best Paper Award)
 """
-from ..modeling import BaseModule
+from ..model import BaseModule
 from ...utils.registry import Registers
 from tensorlayerx import logging
 
