@@ -12,8 +12,6 @@ class BaseConfig(PreTrainedMixin):
     def __init__(self, **kwargs):
         self.pretrained_path = kwargs.pop("pretrained_path", ("", ""))
 
-        self._kwargs = {}
-
         for key, value in kwargs.items():
             try:
                 setattr(self, key, value)
@@ -21,20 +19,12 @@ class BaseConfig(PreTrainedMixin):
                 logging.error(f"Can't set {key} with value {value} for {self}")
                 raise err
 
-    def __setattr__(self, key, value):
-        self._kwargs[key] = value
-
-    def __getattr__(self, key: str):
-        if key not in self._kwargs:
-            logging.error(f"can't get {key} for {self}")
-        return self._kwargs[key]
-
 
 class BaseModelConfig(BaseConfig, metaclass=abc.ABCMeta):
     config_type = "model"
 
     def get_last_output_size(self):
-        size = self._get_last_hidden_size()
+        size = self._get_last_output_size()
         if not isinstance(size, tuple):
             raise TypeError(f"Type of size is tuple, get {type(size)}")
         return size

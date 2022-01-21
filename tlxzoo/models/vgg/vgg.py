@@ -113,3 +113,7 @@ class VGG(BaseModule):
         pixels = pixels * 255 - np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape([1, 1, 1, 3])
         out = self.make_layer(pixels)
         return VGGModelOutput(output=out)
+
+    def tie_weight(self):
+        ...
+

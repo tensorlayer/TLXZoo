@@ -1,4 +1,4 @@
-from ...config.config import BaseModelConfig
+from ...config.config import BaseModelConfig, BaseTaskConfig
 
 cfg = {
     'A': [[64], 'M', [128], 'M', [256, 256], 'M', [512, 512], 'M', [512, 512], 'M', 'F', 'fc1', 'fc2', 'O'],
@@ -34,7 +34,7 @@ model_urls = {
 model_saved_name = {'vgg16': 'vgg16_weights.npz', 'vgg19': 'vgg19.npy'}
 
 
-class VGGConfig(BaseModelConfig):
+class VGGModelConfig(BaseModelConfig):
     model_type = ""
 
     def __init__(
@@ -71,9 +71,17 @@ class VGGConfig(BaseModelConfig):
             raise ValueError(f"end_with must in ['fc1_relu', 'fc2_relu'], get {self.end_with}")
 
 
-class VGG16Config(VGGConfig):
+class VGG16ModelConfig(VGGModelConfig):
     model_type = "vgg16"
 
 
-class VGG19Config(VGGConfig):
+class VGG19ModelConfig(VGGModelConfig):
     model_type = "vgg19"
+
+
+class VGGForImageClassificationTaskConfig(BaseTaskConfig):
+    task_type = "vgg_for_image_classification"
+
+    def __init__(self, model_config: BaseModelConfig, num_labels=1000, **kwargs):
+        self.num_labels = num_labels
+        super(VGGForImageClassificationTaskConfig, self).__init__(model_config, **kwargs)
