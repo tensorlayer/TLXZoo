@@ -32,6 +32,7 @@ from tensorlayerx.nn import (BatchNorm, Conv2d, Dense, Flatten, SequentialLayer,
 from tensorlayerx.nn import Module
 from ...utils.output import BaseModelOutput
 from dataclasses import dataclass
+from .config_vgg import VGGModelConfig
 
 __all__ = ['VGG']
 
@@ -96,6 +97,8 @@ def make_layers(layer_config, config):
 
 @Registers.models.register
 class VGG(BaseModule):
+    config_class = VGGModelConfig
+
     def __init__(self, config):
         super(VGG, self).__init__(config)
 
@@ -113,7 +116,4 @@ class VGG(BaseModule):
         pixels = pixels * 255 - np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape([1, 1, 1, 3])
         out = self.make_layer(pixels)
         return VGGModelOutput(output=out)
-
-    def tie_weight(self):
-        ...
 

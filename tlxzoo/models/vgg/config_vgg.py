@@ -1,4 +1,5 @@
 from ...config.config import BaseModelConfig, BaseTaskConfig
+import os
 
 cfg = {
     'A': [[64], 'M', [128], 'M', [256, 256], 'M', [512, 512], 'M', [512, 512], 'M', 'F', 'fc1', 'fc2', 'O'],
@@ -35,13 +36,14 @@ model_saved_name = {'vgg16': 'vgg16_weights.npz', 'vgg19': 'vgg19.npy'}
 
 
 class VGGModelConfig(BaseModelConfig):
-    model_type = ""
+    model_type = "vgg"
 
     def __init__(
             self,
             end_with='fc2_relu',
             fc2_units=4096,
             fc1_units=4096,
+            layer_type="vgg16",
             batch_norm=False,
             layers=None,
             **kwargs
@@ -50,15 +52,15 @@ class VGGModelConfig(BaseModelConfig):
         self.batch_norm = batch_norm
         self.fc2_units = fc2_units
         self.fc1_units = fc1_units
+        self.layer_type = layer_type
         if layers is None:
-            self.layers = cfg[mapped_cfg[self.model_type]]
+            self.layers = cfg[mapped_cfg[self.layer_type]]
         else:
             self.layers = layers
 
-        pretrained_path = (model_saved_name[self.model_type], model_urls[self.model_type])
+        self.weights_path = os.path.join(model_saved_name[self.layer_type], model_urls[self.layer_type])
 
         super().__init__(
-            pretrained_path=pretrained_path,
             **kwargs,
         )
 
@@ -71,17 +73,11 @@ class VGGModelConfig(BaseModelConfig):
             raise ValueError(f"end_with must in ['fc1_relu', 'fc2_relu'], get {self.end_with}")
 
 
-class VGG16ModelConfig(VGGModelConfig):
-    model_type = "vgg16"
-
-
-class VGG19ModelConfig(VGGModelConfig):
-    model_type = "vgg19"
-
-
 class VGGForImageClassificationTaskConfig(BaseTaskConfig):
     task_type = "vgg_for_image_classification"
+    model_config_type = VGGModelConfig
 
-    def __init__(self, model_config: BaseModelConfig, num_labels=1000, **kwargs):
+    def __init__(self, model_config: model_config_type, num_labels=1000, **kwargs):
         self.num_labels = num_labels
+        self.weights_path = model_config.weights_path
         super(VGGForImageClassificationTaskConfig, self).__init__(model_config, **kwargs)

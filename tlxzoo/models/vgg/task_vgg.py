@@ -1,21 +1,24 @@
 from ...task.task import BaseForImageClassification
-from ...config.config import BaseTaskConfig
 from .vgg import VGG
 from ...utils.registry import Registers
 from ...utils.output import BaseForImageClassificationTaskOutput
+from .config_vgg import VGGForImageClassificationTaskConfig
 import tensorlayerx as tlx
 
 
 @Registers.tasks.register
 class VGGForImageClassification(BaseForImageClassification):
-    def __init__(self, config: BaseTaskConfig):
+    def __init__(self, config: VGGForImageClassificationTaskConfig):
         super(VGGForImageClassification, self).__init__(config)
 
         self.vgg = VGG(self.config.model_config)
 
         self.num_labels = config.num_labels
-        in_channels = self.config.model_config.get_last_output_size()[-1]
-        self.classifier = tlx.nn.Dense(n_units=self.num_labels, in_channels=in_channels, name="classifier")
+        try:
+            in_channels = self.config.model_config.get_last_output_size()[-1]
+            self.classifier = tlx.nn.Dense(n_units=self.num_labels, in_channels=in_channels, name="classifier")
+        except:
+            self.classifier = tlx.nn.Dense(n_units=self.num_labels, name="classifier")
 
     def forward(self, pixels, labels=None):
         outs = self.vgg(pixels)
