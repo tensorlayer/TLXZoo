@@ -3,11 +3,13 @@ import abc
 import json
 import os
 import copy
-from ..utils import MODEL_CONFIG, TASK_CONFIG
+from ..utils import MODEL_CONFIG, TASK_CONFIG, IMAGE_FEATURE_CONFIG
 
 _config_type_name = {"": "",
                      "model": MODEL_CONFIG,
-                     "task": TASK_CONFIG}
+                     "task": TASK_CONFIG,
+                     "image_feature": IMAGE_FEATURE_CONFIG
+                     }
 
 
 class PreTrainedMixin:
@@ -135,6 +137,39 @@ class BaseTaskConfig(BaseConfig):
 
     def _save_sub_pretrained(self, save_directory):
         self.model_config.save_pretrained(save_directory)
+
+
+class BaseFeatureConfig(BaseConfig):
+    config_type = "feature"
+
+    @classmethod
+    def _default_cls(cls, **kwargs):
+        return cls(**kwargs)
+
+    @classmethod
+    def _from_dict(cls, config_dict):
+        return cls(**config_dict)
+
+
+class BaseImageFeatureConfig(BaseFeatureConfig):
+    config_type = "image_feature"
+
+    def __init__(self, do_resize=True,
+                 do_normalize=True,
+                 resize_size=(224, 224),
+                 mean=(123.68, 116.779, 103.939),
+                 std=None,
+                 **kwargs):
+        self.do_resize = do_resize
+        self.do_normalize = do_normalize
+        self.resize_size = tuple(resize_size)
+        self.mean = list(mean)
+        self.std = std
+        super(BaseImageFeatureConfig, self).__init__(**kwargs)
+
+
+class BaseTextFeatureConfig(BaseFeatureConfig):
+    config_type = "text_feature"
 
 
 class BaseInferConfig(BaseConfig):

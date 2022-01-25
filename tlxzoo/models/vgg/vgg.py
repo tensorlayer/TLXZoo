@@ -27,9 +27,7 @@ import os
 import numpy as np
 import tensorlayerx as tlx
 from tensorlayerx import logging
-from tensorlayerx.files import assign_weights, maybe_download_and_extract
 from tensorlayerx.nn import (BatchNorm, Conv2d, Dense, Flatten, SequentialLayer, MaxPool2d)
-from tensorlayerx.nn import Module
 from ...utils.output import BaseModelOutput
 from dataclasses import dataclass
 from .config_vgg import VGGModelConfig
@@ -113,7 +111,7 @@ class VGG(BaseModule):
             Shape [None, 224, 224, 3], value range [0, 1].
         """
 
-        pixels = pixels * 255 - np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape([1, 1, 1, 3])
+        # pixels = pixels * 255 - np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape([1, 1, 1, 3])
         out = self.make_layer(pixels)
         return VGGModelOutput(output=out)
 

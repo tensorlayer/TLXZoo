@@ -1,4 +1,4 @@
-from ...config.config import BaseModelConfig, BaseTaskConfig
+from ...config.config import BaseModelConfig, BaseTaskConfig, BaseImageFeatureConfig
 from ...utils import MODEL_WEIGHT_NAME, TASK_WEIGHT_NAME
 import os
 
