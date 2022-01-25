@@ -82,10 +82,12 @@ class VGGForImageClassificationTaskConfig(BaseTaskConfig):
     model_config_type = VGGModelConfig
 
     def __init__(self,
-                 model_config: model_config_type,
+                 model_config: model_config_type = None,
                  num_labels=1000,
                  weights_path=TASK_WEIGHT_NAME,
                  **kwargs):
+        if model_config is None:
+            model_config = self.model_config_type()
         self.num_labels = num_labels
         if weights_path is None:
             self.weights_path = model_config.weights_path
