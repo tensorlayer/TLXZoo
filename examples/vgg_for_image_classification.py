@@ -1,6 +1,6 @@
 from tlxzoo.models.vgg.config_vgg import *
 from tlxzoo.models.vgg.task_vgg import VGGForImageClassification
-from tlxzoo.config.config import BaseImageFeatureConfig
+from tlxzoo.config import BaseImageFeatureConfig
 from tlxzoo.models.vgg.feature_vgg import VGGFeature
 import tensorlayerx as tlx
 

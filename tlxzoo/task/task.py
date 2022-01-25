@@ -1,7 +1,7 @@
 from tensorlayerx import nn, logging
 import os
 from ..utils import TASK_WEIGHT_FORMAT, TASK_WEIGHT_NAME
-from ..config.config import BaseTaskConfig
+from ..config import BaseTaskConfig
 from ..utils.from_pretrained import ModuleFromPretrainedMixin
 
 
