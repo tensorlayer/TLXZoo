@@ -5,28 +5,27 @@ import tensorlayerx as tlx
 import shutil
 
 
-class ModelTestCase(unittest.TestCase):
+class TaskTestCase(unittest.TestCase):
     def setUp(self):
         print('setUp...')
-        self.vgg16_model_config = VGGModelConfig(layer_type="vgg16")
-        self.model = VGG(self.vgg16_model_config)
-        self.model.set_eval()
+        self.vgg16_task_config = VGGForImageClassificationTaskConfig()
+        self.task = VGGForImageClassification(self.vgg16_task_config)
+        self.task.set_eval()
 
     def tearDown(self):
-        del self.model
+        del self.task
         print('tearDown...')
 
     def test_config(self):
-        self.vgg16_model_config.save_pretrained("vgg16")
-        vgg16_model_config2 = VGGModelConfig.from_pretrained("vgg16")
-        self.assertEqual(self.vgg16_model_config, vgg16_model_config2)
+        self.vgg16_task_config.save_pretrained("vgg16")
+        vgg16_task_config2 = VGGForImageClassificationTaskConfig.from_pretrained("vgg16")
+        self.assertEqual(self.vgg16_task_config, vgg16_task_config2)
         shutil.rmtree("vgg16")
 
     def test_save_pretrained(self):
-        self.model.save_pretrained("vgg16")
-        model_2 = VGG.from_pretrained("vgg16")
-        # self.assertEqual(self.model.all_weights[1], model_2.all_weights[1])
-        assert all(self.model.all_weights[1] == model_2.all_weights[1])
+        self.task.save_pretrained("vgg16")
+        task_2 = VGGForImageClassification.from_pretrained("vgg16")
+        assert all(self.task.all_weights[1] == task_2.all_weights[1])
         shutil.rmtree("vgg16")
 
     def test_feature(self):
@@ -48,11 +47,6 @@ class ModelTestCase(unittest.TestCase):
         img = tlx.vis.read_image('../elephant.jpeg')
 
         img = vgg_feature([img])
-        output = self.model(img)
+        output = self.task(img)
 
-        self.assertIsNotNone(output.output)
-
-
-if __name__ == '__main__':
-    unittest.main()
-
+        self.assertIsNotNone(output.logits)

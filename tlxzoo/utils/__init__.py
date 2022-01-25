@@ -8,7 +8,7 @@ TASK_WEIGHT_FORMAT = "npz"
 TASK_WEIGHT_NAME = "task.npz"
 
 from .from_pretrained import ModuleFromPretrainedMixin
-from output import (BaseModelOutput,
+from .output import (BaseModelOutput,
                     BaseForImageClassificationTaskOutput)
 
 from .registry import Registers
