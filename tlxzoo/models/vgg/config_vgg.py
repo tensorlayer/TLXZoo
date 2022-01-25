@@ -1,4 +1,5 @@
 from ...config.config import BaseModelConfig, BaseTaskConfig
+from ...utils import MODEL_WEIGHT_NAME, TASK_WEIGHT_NAME
 import os
 
 cfg = {
@@ -46,6 +47,7 @@ class VGGModelConfig(BaseModelConfig):
             layer_type="vgg16",
             batch_norm=False,
             layers=None,
+            weights_path=MODEL_WEIGHT_NAME,
             **kwargs
     ):
         self.end_with = end_with
@@ -57,8 +59,10 @@ class VGGModelConfig(BaseModelConfig):
             self.layers = cfg[mapped_cfg[self.layer_type]]
         else:
             self.layers = layers
-
-        self.weights_path = os.path.join(model_saved_name[self.layer_type], model_urls[self.layer_type])
+        if weights_path is None:
+            self.weights_path = os.path.join(model_urls[self.layer_type], model_saved_name[self.layer_type])
+        else:
+            self.weights_path = weights_path
 
         super().__init__(
             **kwargs,
@@ -77,7 +81,14 @@ class VGGForImageClassificationTaskConfig(BaseTaskConfig):
     task_type = "vgg_for_image_classification"
     model_config_type = VGGModelConfig
 
-    def __init__(self, model_config: model_config_type, num_labels=1000, **kwargs):
+    def __init__(self,
+                 model_config: model_config_type,
+                 num_labels=1000,
+                 weights_path=TASK_WEIGHT_NAME,
+                 **kwargs):
         self.num_labels = num_labels
-        self.weights_path = model_config.weights_path
+        if weights_path is None:
+            self.weights_path = model_config.weights_path
+        else:
+            self.weights_path = weights_path
         super(VGGForImageClassificationTaskConfig, self).__init__(model_config, **kwargs)

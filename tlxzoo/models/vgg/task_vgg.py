@@ -8,10 +8,15 @@ import tensorlayerx as tlx
 
 @Registers.tasks.register
 class VGGForImageClassification(BaseForImageClassification):
-    def __init__(self, config: VGGForImageClassificationTaskConfig):
+    config_class = VGGForImageClassificationTaskConfig
+
+    def __init__(self, config: VGGForImageClassificationTaskConfig, model=None):
         super(VGGForImageClassification, self).__init__(config)
 
-        self.vgg = VGG(self.config.model_config)
+        if model is not None:
+            self.vgg = model
+        else:
+            self.vgg = VGG(self.config.model_config)
 
         self.num_labels = config.num_labels
         try:

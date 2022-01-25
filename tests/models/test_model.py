@@ -23,14 +23,19 @@ class ModelTestCase(unittest.TestCase):
         self.assertEqual(self.vgg16_model_config, vgg16_model_config2)
         shutil.rmtree("vgg16")
 
-    def test_from_pretrained(self):
-        ...
-
     def test_save_pretrained(self):
-        ...
+        self.model.save_pretrained("vgg16")
+        model_2 = VGG.from_pretrained("vgg16")
+        # self.assertEqual(self.model.all_weights[1], model_2.all_weights[1])
+        assert all(self.model.all_weights[1] == model_2.all_weights[1])
+        shutil.rmtree("vgg16")
 
     def test_feature(self):
-        ...
+        img = tlx.vis.read_image('../elephant.jpeg')
+        img = tlx.prepro.imresize(img, (224, 224)).astype(np.float32) / 255
+
+        output = self.model(img)
+        self.assertIsNotNone(output.output)
 
     def test_call(self):
         img = tlx.vis.read_image('../elephant.jpeg')
