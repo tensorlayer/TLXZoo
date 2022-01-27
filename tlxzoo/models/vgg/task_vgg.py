@@ -10,7 +10,10 @@ import tensorlayerx as tlx
 class VGGForImageClassification(BaseForImageClassification):
     config_class = VGGForImageClassificationTaskConfig
 
-    def __init__(self, config: VGGForImageClassificationTaskConfig, model=None):
+    def __init__(self, config: VGGForImageClassificationTaskConfig = None, model=None, **kwargs):
+        if config is None:
+            config = self.config_class(**kwargs)
+
         super(VGGForImageClassification, self).__init__(config)
 
         if model is not None:

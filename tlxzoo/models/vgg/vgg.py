@@ -97,11 +97,14 @@ def make_layers(layer_config, config):
 class VGG(BaseModule):
     config_class = VGGModelConfig
 
-    def __init__(self, config):
-        super(VGG, self).__init__(config)
+    def __init__(self, config=None, **kwargs):
+        if config is None:
+            config = self.config_class(**kwargs)
 
-        self.end_with = config.end_with
-        self.batch_norm = config.batch_norm
+        self.end_with = config.end_with = kwargs.pop("end_with", config.end_with)
+        self.batch_norm = config.batch_norm = kwargs.pop("batch_norm", config.batch_norm)
+
+        super(VGG, self).__init__(config, **kwargs)
 
         self.make_layer = make_layers(config.layers, config)
 
