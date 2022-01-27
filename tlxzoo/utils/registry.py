@@ -60,5 +60,6 @@ class Registers():  # pylint: disable=invalid-name, too-few-public-methods
 
     models = Register('models')
     tasks = Register('tasks')
+    datasets = Register('datasets')
 
 

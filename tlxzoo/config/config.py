@@ -18,7 +18,7 @@ class PreTrainedMixin:
     """
 
 
-class BaseConfig(metaclass=abc.ABCMeta):
+class BaseConfig(object):
     config_type = "base"
 
     def __init__(self, **kwargs):
@@ -30,14 +30,16 @@ class BaseConfig(metaclass=abc.ABCMeta):
                 raise err
 
     @classmethod
-    @abc.abstractmethod
     def _default_cls(cls, **kwargs):
-        raise NotImplementedError
+        return cls(**kwargs)
 
     @classmethod
-    @abc.abstractmethod
     def _from_dict(cls, config_dict):
-        raise NotImplementedError
+        return cls(**config_dict)
+
+    @classmethod
+    def from_dict(cls, config_dict):
+        return cls._from_dict(config_dict)
 
     @classmethod
     def get_config_dict_from_path(cls, path):
