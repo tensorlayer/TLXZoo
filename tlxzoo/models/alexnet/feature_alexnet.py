@@ -1,28 +1,25 @@
-from ...feature.image_feature import ImageFeatureMixin
-from ...feature.feature import FeaturePreTrainedMixin
-from ...config.config import BaseImageFeatureConfig
 import numpy as np
+
+from ...config.config import BaseImageFeatureConfig
+from ...feature.feature import FeaturePreTrainedMixin
+from ...feature.image_feature import ImageFeatureMixin
 
 
 class AlexNetFeature(FeaturePreTrainedMixin, ImageFeatureMixin):
     config_class = BaseImageFeatureConfig
 
-    def __init__(
-            self,
-            config,
-            **kwargs
-    ):
+    def __init__(self, config, **kwargs):
         self.config = config
 
-        resize_size = kwargs.pop("resize_size", None)
+        resize_size = kwargs.pop('resize_size', None)
         if resize_size is not None:
             self.config.resize_size = resize_size
 
-        mean = kwargs.pop("mean", None)
+        mean = kwargs.pop('mean', None)
         if mean is not None:
             self.config.mean = mean
 
-        std = kwargs.pop("std", None)
+        std = kwargs.pop('std', None)
         if std is not None:
             self.config.image_std = std
 
@@ -35,13 +32,15 @@ class AlexNetFeature(FeaturePreTrainedMixin, ImageFeatureMixin):
             images = [images]
 
         if self.config.do_resize:
-            images = [self.resize(image=image, size=self.resize_size) for image in images]
+            images = [
+                self.resize(image=image, size=self.resize_size)
+                for image in images
+            ]
 
         if self.config.do_normalize:
-            images = [self.normalize(image=image, mean=self.mean, std=self.std) for image in images]
+            images = [
+                self.normalize(image=image, mean=self.mean, std=self.std)
+                for image in images
+            ]
 
         return np.array(images)
-
-
-
-
