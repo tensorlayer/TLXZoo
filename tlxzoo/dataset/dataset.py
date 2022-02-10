@@ -11,18 +11,24 @@ class BaseDataSetInfoMixin:
 
 
 class BaseDataSet(Dataset, BaseDataSetInfoMixin):
-    def __init__(self, data, label):
+    def __init__(self, data, label, feature_transform=None):
         self.data = data
         self.label = label
+        self.feature_transform = feature_transform
         super(BaseDataSet, self).__init__()
 
     def __getitem__(self, index):
         data = self.data[index].astype('float32')
+        if self.feature_transform:
+            data = self.feature_transform([data])[0]
         label = self.label[index].astype('int64')
         return data, label
 
     def __len__(self):
         return len(self.data)
+
+    def register_feature_transform_hook(self, feature_transform_hook):
+        self.feature_transform = feature_transform_hook
 
     def validate(self, schema):
         index = random.randint(0, len(self) - 1)
@@ -53,8 +59,11 @@ class CoCoDataSetDict(BaseDataSetDict):
 @Registers.datasets.register("Mnist")
 class MnistDataSetDict(BaseDataSetDict):
     @classmethod
-    def load(cls):
+    def load(cls, train_limit=None):
         x_train, y_train, x_val, y_val, x_test, y_test = tlx.files.load_mnist_dataset(shape=(-1, 28, 28, 1))
+        if train_limit is not None:
+            x_train = x_train[:train_limit]
+            y_train = y_train[:train_limit]
 
         return cls({"train": BaseDataSet(x_train, y_train), "val": BaseDataSet(x_val, y_val),
                     "test": BaseDataSet(x_test, y_test)})

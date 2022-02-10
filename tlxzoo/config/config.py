@@ -185,6 +185,20 @@ class BaseDataConfig(BaseConfig):
 class BaseRunnerConfig(BaseConfig):
     config_type = "runner"
 
+    def __init__(self,
+                 loss="softmax_cross_entropy_with_logits",
+                 optimizers="Momentum",
+                 lr=(0.05, 0.9),
+                 metric="Accuracy",
+                 seed=42,
+                 **kwargs):
+        self.loss = loss
+        self.optimizers = optimizers
+        self.lr = lr
+        self.metric = metric
+        self.seed = seed
+        super(BaseRunnerConfig, self).__init__(**kwargs)
+
 
 class BaseAppConfig(BaseConfig):
     config_type = "app"

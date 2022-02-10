@@ -25,9 +25,9 @@ _configs = {BaseForImageClassification.task_type: ImageClassificationDataConfig}
 
 
 class DataLoaders(object):
-    def __init__(self, config):
+    def __init__(self, config, train_limit=None):
         self.config = config
-        self.dataset_dict = Registers.datasets[self.config.data_name].load()
+        self.dataset_dict = Registers.datasets[self.config.data_name].load(train_limit)
 
         get_schema_dataset_func = getattr(self.dataset_dict, f"get_{self.config.task_type}_schema_dataset")
 
@@ -45,6 +45,18 @@ class DataLoaders(object):
             self.test = self.dataset_dataloader(get_schema_dataset_func("test"), dataset_type="test")
         else:
             self.test = None
+
+    def register_feature_transform_hook(self, feature_transform_hook):
+        get_schema_dataset_func = getattr(self.dataset_dict, f"get_{self.config.task_type}_schema_dataset")
+
+        if "train" in self.dataset_dict:
+            get_schema_dataset_func("train").register_feature_transform_hook(feature_transform_hook)
+
+        if "eval" in self.dataset_dict:
+            get_schema_dataset_func("eval").register_feature_transform_hook(feature_transform_hook)
+
+        if "test" in self.dataset_dict:
+            get_schema_dataset_func("test").register_feature_transform_hook(feature_transform_hook)
 
     @classmethod
     def from_pretrained(cls, pretrained_path, **kwargs):
