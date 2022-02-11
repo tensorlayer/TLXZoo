@@ -27,7 +27,7 @@ def run(args):
 
     if args.save:
         runner_config.save_pretrained(args.save_dir)
-        trainer.save_task(args.save_dir)
+        trainer.save(args.save_dir)
 
 
 def _get_augment_parser():

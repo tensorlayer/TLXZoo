@@ -34,6 +34,8 @@ class Trainer(object):
         self.trainer = tlx.model.Model(network=self.task)
         self.register_hooks_from_config(self.config)
 
+        self.feature = None
+
         if self.config.seed is not None:
             np.random.seed(self.config.seed)
             random.seed(self.config.seed)
@@ -51,6 +53,7 @@ class Trainer(object):
         self.trainer.loss_fn = loss_hook
 
     def register_feature_transform_hook(self, feature_transform_hook):
+        self.feature = feature_transform_hook
         self.data_loader.register_feature_transform_hook(feature_transform_hook)
 
     def register_hooks_from_config(self, config):
@@ -73,8 +76,12 @@ class Trainer(object):
     def save_config(self, path):
         self.config.save_pretrained(path)
 
+    def save_feature(self, path):
+        self.feature.save_pretrained(path)
+
     def save(self, path):
         self.save_task(path)
-        self.save_task(path)
+        self.save_config(path)
+        self.save_feature(path)
 
 
