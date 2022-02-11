@@ -2,9 +2,10 @@ from .config import (BaseModelConfig,
                      BaseTaskConfig,
                      BaseImageFeatureConfig,
                      BaseTextFeatureConfig,
+                     BaseTrainerConfig,
                      BaseInferConfig,
                      BaseDataConfig,
-                     BaseRunnerConfig,
-                     BaseAppConfig)
+                     BaseRunnerConfig
+                     )
 from .config import *
 

@@ -68,6 +68,6 @@ class Registers():  # pylint: disable=invalid-name, too-few-public-methods
     model_configs = Register('model_configs')
     task_configs = Register('task_configs')
     infer_configs = Register('infer_configs')
-    runner_configs = Register('runner_configs')
+    trainer_configs = Register('trainer_configs')
 
 

@@ -1,33 +1,33 @@
 import argparse
 import sys
-from tlxzoo.config import BaseAppConfig
+from tlxzoo.config import BaseRunnerConfig
 from tlxzoo.task import BaseTask
 from tlxzoo.dataset import DataLoaders
 from tlxzoo.feature import BaseFeature
-from tlxzoo.runner import Runner
+from tlxzoo.trainer import Trainer
 
 
 def run(args):
     config_path = args.config
-    app_config = BaseAppConfig.from_pretrained(config_path)
+    runner_config = BaseRunnerConfig.from_pretrained(config_path)
 
     load_weight = args.load_weight
-    task = BaseTask.from_pretrained(config_path, config=app_config.task_config, load_weight=load_weight)
+    task = BaseTask.from_pretrained(config_path, config=runner_config.task_config, load_weight=load_weight)
 
-    data_loaders = DataLoaders(app_config.data_config)
+    data_loaders = DataLoaders(runner_config.data_config)
 
-    feature = BaseFeature.from_pretrained(app_config.feature_config)
+    feature = BaseFeature.from_pretrained(runner_config.feature_config)
 
-    runner = Runner(task=task, data_loader=data_loaders, config=app_config.runner_config)
-    runner.register_feature_transform_hook(feature)
+    trainer = Trainer(task=task, data_loader=data_loaders, config=runner_config.trainer_config)
+    trainer.register_feature_transform_hook(feature)
 
     print_freq = args.print_freq
     print_train_batch = args.print_train_batch
-    runner.train(n_epoch=app_config.runner_config.epochs, print_freq=print_freq, print_train_batch=print_train_batch)
+    trainer.train(n_epoch=runner_config.trainer_config.epochs, print_freq=print_freq, print_train_batch=print_train_batch)
 
     if args.save:
-        app_config.save_pretrained(args.save_dir)
-        runner.save_task(args.save_dir)
+        runner_config.save_pretrained(args.save_dir)
+        trainer.save_task(args.save_dir)
 
 
 def _get_augment_parser():

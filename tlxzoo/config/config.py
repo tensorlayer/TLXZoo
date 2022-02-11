@@ -1,27 +1,26 @@
 from tensorlayerx import logging
-import abc
 import json
 import os
 import copy
 from ..utils.registry import Registers
-from ..utils import MODEL_CONFIG, TASK_CONFIG, FEATURE_CONFIG, RUNNER_CONFIG, DATA_CONFIG, \
-    INFER_CONFIG, APP_CONFIG
+from ..utils import MODEL_CONFIG, TASK_CONFIG, FEATURE_CONFIG, TRAINER_CONFIG, DATA_CONFIG, \
+    INFER_CONFIG, RUNNER_CONFIG
 
 _config_type_name = {"": "",
                      "model": MODEL_CONFIG,
                      "task": TASK_CONFIG,
                      "feature": FEATURE_CONFIG,
-                     "runner": RUNNER_CONFIG,
+                     "trainer": TRAINER_CONFIG,
                      "data": DATA_CONFIG,
                      "infer": INFER_CONFIG,
-                     "app": APP_CONFIG
+                     "runner": RUNNER_CONFIG
                      }
 
 _config_type_register = {
     "model": Registers.model_configs,
     "task": Registers.task_configs,
     "feature": Registers.feature_configs,
-    "runner": Registers.runner_configs,
+    "trainer": Registers.trainer_configs,
     "data": Registers.data_configs,
     "infer": Registers.infer_configs,
 }
@@ -211,9 +210,9 @@ class BaseDataConfig(BaseConfig):
     config_type = "data"
 
 
-@Registers.runner_configs.register
-class BaseRunnerConfig(BaseConfig):
-    config_type = "runner"
+@Registers.trainer_configs.register
+class BaseTrainerConfig(BaseConfig):
+    config_type = "trainer"
 
     def __init__(self,
                  loss="softmax_cross_entropy_with_logits",
@@ -229,38 +228,38 @@ class BaseRunnerConfig(BaseConfig):
         self.metric = metric
         self.seed = seed
         self.epochs = epochs
-        super(BaseRunnerConfig, self).__init__(**kwargs)
+        super(BaseTrainerConfig, self).__init__(**kwargs)
 
 
-class BaseAppConfig(BaseConfig):
-    config_type = "app"
+class BaseRunnerConfig(BaseConfig):
+    config_type = "runner"
 
     def __init__(self,
                  data_config: BaseDataConfig,
                  feature_config: BaseFeatureConfig,
                  task_config: BaseTaskConfig,
-                 runner_config: BaseRunnerConfig,
+                 trainer_config: BaseTrainerConfig,
                  infer_config: BaseInferConfig,
                  **kwargs
                  ):
         self.data_config = data_config
         self.feature_config = feature_config
         self.task_config = task_config
-        self.runner_config = runner_config
+        self.trainer_config = trainer_config
         self.infer_config = infer_config
-        super(BaseAppConfig, self).__init__(**kwargs)
+        super(BaseRunnerConfig, self).__init__(**kwargs)
 
     @classmethod
     def from_pretrained(cls, config_path, **kwargs):
         if config_path is None:
             raise ValueError("config path is None")
-        return super(BaseAppConfig, cls).from_pretrained(config_path, **kwargs)
+        return super(BaseRunnerConfig, cls).from_pretrained(config_path, **kwargs)
 
     def _save_sub_pretrained(self, save_directory):
         self.data_config.save_pretrained(save_directory)
         self.feature_config.save_pretrained(save_directory)
         self.task_config.save_pretrained(save_directory)
-        self.runner_config.save_pretrained(save_directory)
+        self.trainer_config.save_pretrained(save_directory)
         self.infer_config.save_pretrained(save_directory)
 
     def _post_dict(self, _dict):
@@ -274,7 +273,7 @@ class BaseAppConfig(BaseConfig):
         _dict["task_config_path"] = _config_type_name[self.task_config.config_type]
 
         del _dict["runner_config"]
-        _dict["runner_config_path"] = _config_type_name[self.runner_config.config_type]
+        _dict["runner_config_path"] = _config_type_name[self.trainer_config.config_type]
 
         del _dict["infer_config"]
         _dict["infer_config_path"] = _config_type_name[self.infer_config.config_type]
@@ -291,13 +290,13 @@ class BaseAppConfig(BaseConfig):
         task_config = BaseTaskConfig.from_pretrained(
             os.path.join(config_dict["base_path"], config_dict["task_config_path"]))
 
-        runner_config = BaseRunnerConfig.from_pretrained(
+        trainer_config = BaseTrainerConfig.from_pretrained(
             os.path.join(config_dict["base_path"], config_dict["runner_config_path"]))
 
         infer_config = BaseInferConfig.from_pretrained(
             os.path.join(config_dict["base_path"], config_dict["infer_config_path"]))
 
         return cls(data_config=data_config, feature_config=feature_config, task_config=task_config,
-                   runner_config=runner_config, infer_config=infer_config, **config_dict)
+                   trainer_config=trainer_config, infer_config=infer_config, **config_dict)
 
 

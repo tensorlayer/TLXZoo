@@ -19,7 +19,7 @@ def get_metric_from_config(config):
     return metric
 
 
-class Runner(object):
+class Trainer(object):
     def __init__(self,
                  task,
                  data_loader,

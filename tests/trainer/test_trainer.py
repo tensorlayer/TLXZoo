@@ -1,6 +1,6 @@
 import unittest
-from tlxzoo.config import BaseRunnerConfig
-from tlxzoo.runner import Runner
+from tlxzoo.config import BaseTrainerConfig
+from tlxzoo.trainer import Trainer
 from tlxzoo.dataset import DataLoaders, ImageClassificationDataConfig
 from tlxzoo.models.vgg.task_vgg import VGGForImageClassification
 from tlxzoo.models.vgg.config_vgg import *
@@ -8,7 +8,7 @@ from tlxzoo.config.config import BaseImageFeatureConfig
 from tlxzoo.models.vgg.feature_vgg import VGGFeature
 
 
-class ModelTestCase(unittest.TestCase):
+class TrainerTestCase(unittest.TestCase):
     def test_run(self):
         # data
         config = ImageClassificationDataConfig()
@@ -24,13 +24,13 @@ class ModelTestCase(unittest.TestCase):
         vgg_feature = VGGFeature(image_feat_config)
 
         # run
-        run_config = BaseRunnerConfig()
-        run = Runner(task=vgg16_task, data_loader=data_loaders, config=run_config)
-        run.register_feature_transform_hook(vgg_feature)
+        run_config = BaseTrainerConfig()
+        trainer = Trainer(task=vgg16_task, data_loader=data_loaders, config=run_config)
+        trainer.register_feature_transform_hook(vgg_feature)
         n_epoch = 5
         print_freq = 2
         # train
-        run.train(n_epoch=n_epoch, print_freq=print_freq, print_train_batch=False)
+        trainer.train(n_epoch=n_epoch, print_freq=print_freq, print_train_batch=False)
 
 
 if __name__ == '__main__':

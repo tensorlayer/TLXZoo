@@ -1,10 +1,10 @@
 MODEL_CONFIG = "model_config.json"
 TASK_CONFIG = "task_config.json"
 FEATURE_CONFIG = "feature_config.json"
-RUNNER_CONFIG = "runner_config.json"
+TRAINER_CONFIG = "trainer_config.json"
 DATA_CONFIG = "data_config.json"
 INFER_CONFIG = "infer_config.json"
-APP_CONFIG = "app_config.json"
+RUNNER_CONFIG = "runner_config.json"
 
 MODEL_WEIGHT_FORMAT = "npz"
 MODEL_WEIGHT_NAME = "model.npz"
