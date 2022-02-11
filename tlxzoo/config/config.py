@@ -73,7 +73,7 @@ class BaseConfig(object):
 
         config_dict["base_path"] = os.path.dirname(config_path)
 
-        if config_dict["config_type"] == "app":
+        if config_dict["config_type"] == "runner":
             return cls._from_dict(config_dict)
 
         if "config_class" in config_dict:
@@ -272,8 +272,8 @@ class BaseRunnerConfig(BaseConfig):
         del _dict["task_config"]
         _dict["task_config_path"] = _config_type_name[self.task_config.config_type]
 
-        del _dict["runner_config"]
-        _dict["runner_config_path"] = _config_type_name[self.trainer_config.config_type]
+        del _dict["trainer_config"]
+        _dict["trainer_config_path"] = _config_type_name[self.trainer_config.config_type]
 
         del _dict["infer_config"]
         _dict["infer_config_path"] = _config_type_name[self.infer_config.config_type]
@@ -291,7 +291,7 @@ class BaseRunnerConfig(BaseConfig):
             os.path.join(config_dict["base_path"], config_dict["task_config_path"]))
 
         trainer_config = BaseTrainerConfig.from_pretrained(
-            os.path.join(config_dict["base_path"], config_dict["runner_config_path"]))
+            os.path.join(config_dict["base_path"], config_dict["trainer_config_path"]))
 
         infer_config = BaseInferConfig.from_pretrained(
             os.path.join(config_dict["base_path"], config_dict["infer_config_path"]))

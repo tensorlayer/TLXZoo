@@ -23,3 +23,7 @@ class BaseModule(nn.Module, ModuleFromPretrainedMixin):
     def from_config(cls, config, *args, **kwargs):
         return Registers.models[config.model_class](config, *args, **kwargs)
 
+    @classmethod
+    def config_from_pretrained(cls, pretrained_base_path, **kwargs):
+        return BaseModelConfig.from_pretrained(pretrained_base_path, **kwargs)
+
