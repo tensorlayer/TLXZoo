@@ -1,10 +1,11 @@
-from ...feature.image_feature import ImageFeatureMixin
-from ...feature.feature import FeaturePreTrainedMixin
+from ...feature.feature import BaseImageFeature
 from ...config.config import BaseImageFeatureConfig
 import numpy as np
+from ...utils.registry import Registers
 
 
-class VGGFeature(FeaturePreTrainedMixin, ImageFeatureMixin):
+@Registers.features.register
+class VGGFeature(BaseImageFeature):
     config_class = BaseImageFeatureConfig
 
     def __init__(
@@ -29,6 +30,8 @@ class VGGFeature(FeaturePreTrainedMixin, ImageFeatureMixin):
         self.resize_size = self.config.resize_size
         self.mean = self.config.mean
         self.std = self.config.std
+
+        super(VGGFeature, self).__init__(config, **kwargs)
 
     def __call__(self, images, *args, **kwargs):
         if not isinstance(images, (list, tuple)):

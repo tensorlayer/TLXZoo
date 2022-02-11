@@ -1,3 +1,2 @@
-from .feature import FeaturePreTrainedMixin
-from .image_feature import ImageFeatureMixin
+from .feature import BaseFeature, BaseImageFeature
 

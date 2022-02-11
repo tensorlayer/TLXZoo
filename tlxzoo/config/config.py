@@ -221,12 +221,14 @@ class BaseRunnerConfig(BaseConfig):
                  lr=(0.05, 0.9),
                  metric="Accuracy",
                  seed=42,
+                 epochs=5,
                  **kwargs):
         self.loss = loss
         self.optimizers = optimizers
         self.lr = lr
         self.metric = metric
         self.seed = seed
+        self.epochs = epochs
         super(BaseRunnerConfig, self).__init__(**kwargs)
 
 

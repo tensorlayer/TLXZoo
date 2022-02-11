@@ -25,7 +25,7 @@ class ModelTestCase(unittest.TestCase):
 
         # run
         run_config = BaseRunnerConfig()
-        run = Runner(model=vgg16_task, data_loader=data_loaders, config=run_config)
+        run = Runner(task=vgg16_task, data_loader=data_loaders, config=run_config)
         run.register_feature_transform_hook(vgg_feature)
         n_epoch = 5
         print_freq = 2
