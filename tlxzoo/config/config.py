@@ -87,7 +87,7 @@ class BaseConfig(object):
 
         _dict = self.to_dict()
         config_file_path = os.path.join(save_directory, _config_type_name[self.config_type])
-        json.dump(_dict, open(config_file_path, "w"))
+        json.dump(_dict, open(config_file_path, "w"), indent=4)
         return config_file_path
 
     def _save_sub_pretrained(self, save_directory):
