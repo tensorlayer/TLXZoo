@@ -5,15 +5,16 @@ from ..task import BaseForImageClassification
 from ..utils.registry import Registers
 
 
+@Registers.data_configs.register
 class ImageClassificationDataConfig(BaseDataConfig):
     task = BaseForImageClassification
+    schema = image_classification_task_data_set_schema
 
     def __init__(self,
                  per_device_train_batch_size=2,
                  per_device_eval_batch_size=2,
                  data_name="Mnist",
                  **kwargs):
-        self.schema = image_classification_task_data_set_schema
         self.per_device_train_batch_size = per_device_train_batch_size
         self.per_device_eval_batch_size = per_device_eval_batch_size
         self.data_name = data_name
@@ -21,7 +22,7 @@ class ImageClassificationDataConfig(BaseDataConfig):
         super(ImageClassificationDataConfig, self).__init__(**kwargs)
 
 
-_configs = {BaseForImageClassification.task_type: ImageClassificationDataConfig}
+# _configs = {BaseForImageClassification.task_type: ImageClassificationDataConfig}
 
 
 class DataLoaders(object):
@@ -66,7 +67,8 @@ class DataLoaders(object):
                 raise ValueError("pretrained_path and config are both None.")
 
             config_dict = BaseDataConfig.get_config_dict_from_path(pretrained_path)
-            config = _configs[config_dict.task_type].from_dict(config_dict)
+            # config = _configs[config_dict.task_type].from_dict(config_dict)
+            config = Registers.data_configs[config_dict.config_class].from_dict(config_dict)
 
         return cls(config)
 

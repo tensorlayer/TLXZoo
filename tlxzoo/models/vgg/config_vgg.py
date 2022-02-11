@@ -1,6 +1,7 @@
 from ...config.config import BaseModelConfig, BaseTaskConfig, BaseImageFeatureConfig
 from ...utils import MODEL_WEIGHT_NAME, TASK_WEIGHT_NAME
 import os
+from ...utils.registry import Registers
 
 cfg = {
     'A': [[64], 'M', [128], 'M', [256, 256], 'M', [512, 512], 'M', [512, 512], 'M', 'F', 'fc1', 'fc2', 'O'],
@@ -36,6 +37,7 @@ model_urls = {
 model_saved_name = {'vgg16': 'vgg16_weights.npz', 'vgg19': 'vgg19.npy'}
 
 
+@Registers.model_configs.register
 class VGGModelConfig(BaseModelConfig):
     model_type = "vgg"
 
@@ -77,6 +79,7 @@ class VGGModelConfig(BaseModelConfig):
             raise ValueError(f"end_with must in ['fc1_relu', 'fc2_relu'], get {self.end_with}")
 
 
+@Registers.task_configs.register
 class VGGForImageClassificationTaskConfig(BaseTaskConfig):
     task_type = "vgg_for_image_classification"
     model_config_type = VGGModelConfig

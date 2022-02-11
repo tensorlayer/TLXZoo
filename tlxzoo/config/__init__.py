@@ -6,3 +6,5 @@ from .config import (BaseModelConfig,
                      BaseDataConfig,
                      BaseRunnerConfig,
                      BaseAppConfig)
+from .config import *
+

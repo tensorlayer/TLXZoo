@@ -20,8 +20,11 @@ class BaseTask(nn.Module, ModuleFromPretrainedMixin):
 class BaseForImageClassification(BaseTask):
     task_type = "image_classification"
 
-    def __call__(self, *args, **kwargs):
-        return super(BaseForImageClassification, self).__call__(*args, **kwargs).logits
+    def __call__(self, *args, return_output=False, **kwargs):
+        if return_output:
+            return super(BaseForImageClassification, self).__call__(*args, **kwargs)
+        else:
+            return super(BaseForImageClassification, self).__call__(*args, **kwargs).logits
 
 
 class BaseForObjectDetection(BaseTask):

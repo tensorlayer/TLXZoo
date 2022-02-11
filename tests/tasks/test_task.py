@@ -47,6 +47,6 @@ class TaskTestCase(unittest.TestCase):
         img = tlx.vis.read_image('../elephant.jpeg')
 
         img = vgg_feature([img])
-        output = self.task(img)
+        output = self.task(img, return_output=True)
 
         self.assertIsNotNone(output.logits)
