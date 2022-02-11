@@ -1,2 +1,3 @@
-from .task import (BaseForImageClassification,
+from .task import (BaseTask,
+                   BaseForImageClassification,
                    BaseForObjectDetection)

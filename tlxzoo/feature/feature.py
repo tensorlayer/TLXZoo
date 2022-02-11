@@ -1,5 +1,8 @@
 
 
+class BaseFeature(object):
+    ...
+
 class FeaturePreTrainedMixin:
     @classmethod
     def from_pretrained(

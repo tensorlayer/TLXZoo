@@ -1,5 +1,5 @@
 import inspect
-from absl import logging
+from tensorlayerx import logging
 
 
 class Register:
@@ -60,6 +60,7 @@ class Registers():  # pylint: disable=invalid-name, too-few-public-methods
 
     models = Register('models')
     tasks = Register('tasks')
+    features = Register('features')
     datasets = Register('datasets')
 
     data_configs = Register('data_configs')

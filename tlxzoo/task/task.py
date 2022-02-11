@@ -3,6 +3,7 @@ import os
 from ..utils import TASK_WEIGHT_FORMAT, TASK_WEIGHT_NAME
 from ..config import BaseTaskConfig
 from ..utils.from_pretrained import ModuleFromPretrainedMixin
+from ..utils.registry import Registers
 
 
 class BaseTask(nn.Module, ModuleFromPretrainedMixin):
@@ -12,9 +13,18 @@ class BaseTask(nn.Module, ModuleFromPretrainedMixin):
 
         super(BaseTask, self).__init__(*args, **kwargs)
         self.config = config
+        self.config.task_class = self.__class__.__name__
+
+    @classmethod
+    def config_from_pretrained(cls, pretrained_base_path, **kwargs):
+        return BaseTaskConfig.from_pretrained(pretrained_base_path, **kwargs)
 
     def save_pretrained(self, save_directory):
         self._save_pretrained(save_directory, TASK_WEIGHT_NAME, TASK_WEIGHT_FORMAT)
+
+    @classmethod
+    def from_config(cls, config, *args, **kwargs):
+        return Registers.tasks[config.task_class](config, *args, **kwargs)
 
 
 class BaseForImageClassification(BaseTask):
