@@ -1,24 +1,48 @@
-from ..image_feature import ImageFeaturePreTrainedMixin, ImageFeatureMixin
+from ...feature.feature import BaseImageFeature
+from ...config.config import BaseImageFeatureConfig
 import numpy as np
-import tensorlayerx as tlx
+from ...utils.registry import Registers
 
 
-class FeatureResNet(ImageFeaturePreTrainedMixin, ImageFeatureMixin):
+@Registers.features.register
+class ResNetFeature(BaseImageFeature):
+    config_class = BaseImageFeatureConfig
+
     def __init__(
             self,
+            config,
             **kwargs
     ):
-        self.resize_size = kwargs.pop("resize_size", None)
-        self.image_mean = kwargs.pop("image_mean", None)
-        self.image_std = kwargs.pop("image_std", None)
+        self.config = config
+
+        resize_size = kwargs.pop("resize_size", None)
+        if resize_size is not None:
+            self.config.resize_size = resize_size
+
+        mean = kwargs.pop("mean", None)
+        if mean is not None:
+            self.config.mean = mean
+
+        std = kwargs.pop("std", None)
+        if std is not None:
+            self.config.image_std = std
+
+        self.resize_size = self.config.resize_size
+        self.mean = self.config.mean
+        self.std = self.config.std
+
+        super(ResNetFeature, self).__init__(config, **kwargs)
 
     def __call__(self, images, *args, **kwargs):
-        if self.resize_size:
+        if not isinstance(images, (list, tuple)):
+            images = [images]
+
+        if self.config.do_resize:
             images = [self.resize(image=image, size=self.resize_size) for image in images]
 
-        if self.image_mean:
-            images = [self.normalize(image=image, mean=self.image_mean, std=self.image_std) for image in images]
+        if self.config.do_normalize:
+            images = [self.normalize(image=image, mean=self.mean, std=self.std) for image in images]
 
-        return images
+        return np.array(images)
 
 

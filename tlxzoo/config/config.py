@@ -116,6 +116,10 @@ class BaseConfig(object):
 class BaseModelConfig(BaseConfig):
     config_type = "model"
 
+    def __init__(self, weights_path=None, **kwargs):
+        self.weights_path = weights_path
+        super(BaseModelConfig, self).__init__(**kwargs)
+
     def get_last_output_size(self):
         size = self._get_last_output_size()
         if not isinstance(size, tuple):

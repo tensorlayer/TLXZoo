@@ -10,6 +10,8 @@ from tensorlayerx import logging
 from tensorlayerx.nn import (BatchNorm, Conv2d, Dense, Elementwise, GlobalMeanPool2d, MaxPool2d)
 from tensorlayerx.nn import Module, SequentialLayer
 import os
+from ...utils.output import BaseModelOutput
+from dataclasses import dataclass
 import tensorlayerx as tlx
 
 __all__ = ["ResNet"]
@@ -20,6 +22,11 @@ block_filters = [[64, 64, 256], [128, 128, 512], [256, 256, 1024], [512, 512, 20
 in_channels_conv = [64, 256, 512, 1024]
 in_channels_identity = [256, 512, 1024, 2048]
 henorm = tlx.nn.initializers.he_normal()
+
+
+@dataclass
+class ResNetModelOutput(BaseModelOutput):
+    ...
 
 
 class IdentityBlock(Module):
@@ -51,7 +58,7 @@ class IdentityBlock(Module):
         self.conv1 = Conv2d(filters1, (1, 1), W_init=henorm, name=conv_name_base + '2a', in_channels=_in_channels)
         self.bn1 = BatchNorm(name=bn_name_base + '2a', act='relu', num_features=filters1)
 
-        ks = (config.kernel_size, config.kernel_size)
+        ks = (config.identity_block_kernel_size, config.identity_block_kernel_size)
         self.conv2 = Conv2d(
             filters2, ks, padding='SAME', W_init=henorm, name=conv_name_base + '2b', in_channels=filters1
         )
@@ -86,7 +93,7 @@ class ConvBlock(Module):
         )
         self.bn1 = BatchNorm(name=bn_name_base + '2a', act='relu', num_features=filters1)
 
-        ks = (config.kernel_size, config.kernel_size)
+        ks = (config.conv_block_kernel_size, config.conv_block_kernel_size)
         self.conv2 = Conv2d(
             filters2, ks, padding='SAME', W_init=henorm, name=conv_name_base + '2b', in_channels=filters1
         )
@@ -136,7 +143,7 @@ class ResNet(BaseModule):
         z = self.bn_conv1(z)
         z = self.max_pool1(z)
         z = self.res_layer(z)
-        return z
+        return ResNetModelOutput(output=z)
 
     def make_layer(self):
         layer_list = []

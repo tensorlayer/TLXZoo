@@ -62,11 +62,12 @@ class VGGModelConfig(BaseModelConfig):
         else:
             self.layers = layers
         if weights_path is None:
-            self.weights_path = os.path.join(model_urls[self.layer_type], model_saved_name[self.layer_type])
+            weights_path = os.path.join(model_urls[self.layer_type], model_saved_name[self.layer_type])
         else:
-            self.weights_path = weights_path
+            weights_path = weights_path
 
         super().__init__(
+            weights_path=weights_path,
             **kwargs,
         )
 
