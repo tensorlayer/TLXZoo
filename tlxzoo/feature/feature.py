@@ -19,10 +19,14 @@ class BaseFeature(object):
     ):
         config = BaseFeatureConfig.from_pretrained(pretrained_path, **kwargs)
 
-        return Registers.features[config.feature_class](config)
+        return cls.from_config(config)
 
     def save_pretrained(self, save_path):
         self.config.save_pretrained(save_path)
+
+    @classmethod
+    def from_config(cls, config):
+        return Registers.features[config.feature_class](config)
 
 
 class BaseImageFeature(BaseFeature):

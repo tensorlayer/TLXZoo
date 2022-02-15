@@ -16,7 +16,7 @@ def run(args):
 
     data_loaders = DataLoaders(runner_config.data_config)
 
-    feature = BaseFeature.from_pretrained(runner_config.feature_config)
+    feature = BaseFeature.from_config(runner_config.feature_config)
 
     trainer = Trainer(task=task, data_loader=data_loaders, config=runner_config.trainer_config)
     trainer.register_feature_transform_hook(feature)
