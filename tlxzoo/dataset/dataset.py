@@ -76,8 +76,25 @@ class MnistDataSetDict(BaseDataSetDict):
         else:
             dataset = self["test"]
 
-        # dataset.validate(image_classification_task_data_set_schema)
         return dataset
 
 
+@Registers.datasets.register("Cifar10")
+class Cifar10DataSetDict(BaseDataSetDict):
+    @classmethod
+    def load(cls, train_limit=None):
+        x_train, y_train, x_test, y_test = tlx.files.load_cifar10_dataset(shape=(-1, 32, 32, 3), plotable=False)
+        if train_limit is not None:
+            x_train = x_train[:train_limit]
+            y_train = y_train[:train_limit]
 
+        return cls({"train": BaseDataSet(x_train, y_train),
+                    "test": BaseDataSet(x_test, y_test)})
+
+    def get_image_classification_schema_dataset(self, dataset_type):
+        if dataset_type == "train":
+            dataset = self["train"]
+        else:
+            dataset = self["test"]
+
+        return dataset

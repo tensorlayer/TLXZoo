@@ -47,6 +47,11 @@ class BaseImageFeature(BaseFeature):
         # self._image_type(image)
         if isinstance(mean, list):
             mean = np.array(mean, dtype=np.float32).reshape([1, 1, 3])
+
+        if mean:
+            image = image - mean
         if std:
-            return (image - mean) / std
-        return image - mean
+            image = image / std
+
+        return image
+

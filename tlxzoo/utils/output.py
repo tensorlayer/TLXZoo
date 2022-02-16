@@ -35,3 +35,8 @@ class BaseTaskOutput(BaseOutput):
 @dataclass
 class BaseForImageClassificationTaskOutput(BaseTaskOutput):
     ...
+
+
+@dataclass
+class BaseForObjectDetectionTaskOutput(BaseTaskOutput):
+    ...

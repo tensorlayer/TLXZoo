@@ -194,7 +194,10 @@ class BaseImageFeatureConfig(BaseFeatureConfig):
         self.do_resize = do_resize
         self.do_normalize = do_normalize
         self.resize_size = tuple(resize_size)
-        self.mean = list(mean)
+        if mean is not None:
+            self.mean = list(mean)
+        else:
+            self.mean = mean
         self.std = std
         super(BaseImageFeatureConfig, self).__init__(**kwargs)
 
