@@ -22,6 +22,8 @@ class VGGForImageClassification(BaseForImageClassification):
             self.vgg = VGG(self.config.model_config)
 
         self.num_labels = config.num_labels
+        # self.batch_norm = tlx.nn.BatchNorm()
+        # self.dropout = tlx.nn.Dropout(0.7)
         try:
             in_channels = self.config.model_config.get_last_output_size()[-1]
             self.classifier = tlx.nn.Dense(n_units=self.num_labels, in_channels=in_channels, name="classifier")
@@ -32,6 +34,8 @@ class VGGForImageClassification(BaseForImageClassification):
         outs = self.vgg(pixels)
 
         last_out = outs.output
+        # last_out = self.batch_norm(last_out)
+        # last_out = self.dropout(last_out)
 
         logits = self.classifier(last_out)
         if labels:

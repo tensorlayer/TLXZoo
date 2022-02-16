@@ -27,7 +27,7 @@ import os
 import numpy as np
 import tensorlayerx as tlx
 from tensorlayerx import logging
-from tensorlayerx.nn import (BatchNorm, Conv2d, Dense, Flatten, SequentialLayer, MaxPool2d)
+from tensorlayerx.nn import (BatchNorm, Conv2d, Dense, Flatten, SequentialLayer, MaxPool2d, Dropout)
 from ...utils.output import BaseModelOutput
 from dataclasses import dataclass
 from .config_vgg import VGGModelConfig
@@ -69,6 +69,8 @@ def make_layers(layer_config, config):
                 )
                 if config.batch_norm:
                     layer_list.append(BatchNorm(num_features=n_filter))
+                if idx < (len(layer_group) - 1):
+                    layer_list.append(Dropout(0.7))
                 if layer_name == config.end_with:
                     is_end = True
                     break
@@ -79,10 +81,11 @@ def make_layers(layer_config, config):
             elif layer_group == 'O':
                 layer_list.append(Dense(n_units=1000, in_channels=config.fc2_units, name=layer_name))
             elif layer_group == 'F':
+                layer_list.append(Dropout(0.7))
                 layer_list.append(Flatten(name='flatten'))
             elif layer_group == 'fc1':
                 layer_list.append(
-                    Dense(n_units=config.fc1_units, act=tlx.ReLU, in_channels=512 * 7 * 7, name=layer_name))
+                    Dense(n_units=config.fc1_units, act=tlx.ReLU, name=layer_name))
             elif layer_group == 'fc2':
                 layer_list.append(
                     Dense(n_units=config.fc2_units, act=tlx.ReLU, in_channels=config.fc1_units, name=layer_name))

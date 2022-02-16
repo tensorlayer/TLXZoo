@@ -44,10 +44,10 @@ class VGGModelConfig(BaseModelConfig):
     def __init__(
             self,
             end_with='fc2_relu',
-            fc2_units=4096,
-            fc1_units=4096,
+            fc2_units=512,
+            fc1_units=512,
             layer_type="vgg16",
-            batch_norm=False,
+            batch_norm=True,
             layers=None,
             weights_path=MODEL_WEIGHT_NAME,
             **kwargs

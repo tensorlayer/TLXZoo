@@ -48,9 +48,13 @@ class BaseImageFeature(BaseFeature):
         if isinstance(mean, list):
             mean = np.array(mean, dtype=np.float32).reshape([1, 1, 3])
 
-        if mean:
+        if isinstance(std, list):
+            std = np.array(std, dtype=np.float32).reshape([1, 1, 3])
+
+        if mean is not None:
             image = image - mean
-        if std:
+
+        if std is not None:
             image = image / std
 
         return image

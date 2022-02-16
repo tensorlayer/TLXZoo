@@ -199,6 +199,8 @@ class BaseImageFeatureConfig(BaseFeatureConfig):
         else:
             self.mean = mean
         self.std = std
+        if isinstance(self.std, tuple):
+            self.std = list(self.std)
         super(BaseImageFeatureConfig, self).__init__(**kwargs)
 
 
