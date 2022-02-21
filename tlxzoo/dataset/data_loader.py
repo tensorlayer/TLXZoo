@@ -3,6 +3,7 @@ from ..config import BaseDataConfig
 from .task_schema import image_classification_task_data_set_schema
 from ..task import BaseForImageClassification
 from ..utils.registry import Registers
+from .data_random import DataRandom
 
 
 @Registers.data_configs.register
@@ -14,11 +15,19 @@ class ImageClassificationDataConfig(BaseDataConfig):
                  per_device_train_batch_size=2,
                  per_device_eval_batch_size=2,
                  data_name="Mnist",
+                 random_rotation_degrees=15,
+                 random_shift=(0.1, 0.1),
+                 random_flip_horizontal_prop=0.5,
+                 random_crop_size=(32, 4),
                  **kwargs):
         self.per_device_train_batch_size = per_device_train_batch_size
         self.per_device_eval_batch_size = per_device_eval_batch_size
         self.data_name = data_name
         self.task_type = self.task.task_type
+        self.random_rotation_degrees = random_rotation_degrees
+        self.random_shift = random_shift
+        self.random_flip_horizontal_prop = random_flip_horizontal_prop
+        self.random_crop_size = random_crop_size
         super(ImageClassificationDataConfig, self).__init__(**kwargs)
 
 
@@ -32,8 +41,15 @@ class DataLoaders(object):
 
         get_schema_dataset_func = getattr(self.dataset_dict, f"get_{self.config.task_type}_schema_dataset")
 
+        data_random_hook = DataRandom(random_rotation_degrees=self.config.random_rotation_degrees,
+                                      random_shift=self.config.random_shift,
+                                      random_flip_horizontal_prop=self.config.random_flip_horizontal_prop,
+                                      random_crop_size=self.config.random_crop_size)
+
         if "train" in self.dataset_dict:
-            self.train = self.dataset_dataloader(get_schema_dataset_func("train"), dataset_type="train")
+            train_data = get_schema_dataset_func("train")
+            train_data.register_random_transform_hook(data_random_hook)
+            self.train = self.dataset_dataloader(train_data, dataset_type="train")
         else:
             self.train = None
 

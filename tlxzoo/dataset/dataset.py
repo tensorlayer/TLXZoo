@@ -15,12 +15,15 @@ class BaseDataSet(Dataset, BaseDataSetInfoMixin):
         self.data = data
         self.label = label
         self.feature_transform = feature_transform
+        self.random_transform_hook = None
         super(BaseDataSet, self).__init__()
 
     def __getitem__(self, index):
         data = self.data[index].astype('float32')
         if self.feature_transform:
             data = self.feature_transform([data])[0]
+        if self.random_transform_hook:
+            data = self.random_transform_hook(data)
         label = self.label[index].astype('int64')
         return data, label
 
@@ -29,6 +32,9 @@ class BaseDataSet(Dataset, BaseDataSetInfoMixin):
 
     def register_feature_transform_hook(self, feature_transform_hook):
         self.feature_transform = feature_transform_hook
+
+    def register_random_transform_hook(self, random_transform_hook):
+        self.random_transform_hook = random_transform_hook
 
     def validate(self, schema):
         index = random.randint(0, len(self) - 1)

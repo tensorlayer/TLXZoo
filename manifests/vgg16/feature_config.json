@@ -1,0 +1,21 @@
+{
+    "do_resize": false,
+    "do_normalize": true,
+    "resize_size": [
+        224,
+        224
+    ],
+    "mean": [
+        125.31,
+        122.95,
+        113.86
+    ],
+    "std": [
+        62.99,
+        62.09,
+        66.7
+    ],
+    "feature_class": "VGGFeature",
+    "config_type": "feature",
+    "config_class": "BaseImageFeatureConfig"
+}

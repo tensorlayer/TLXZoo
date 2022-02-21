@@ -1,5 +1,7 @@
 import argparse
 import sys
+import os
+
 from tlxzoo.config import BaseRunnerConfig
 from tlxzoo.task import BaseTask
 from tlxzoo.dataset import DataLoaders
@@ -10,6 +12,7 @@ from tlxzoo.trainer import Trainer
 def run(args):
     config_path = args.config
     runner_config = BaseRunnerConfig.from_pretrained(config_path)
+    os.environ['TL_BACKEND'] = runner_config.backend
 
     load_weight = args.load_weight
     task = BaseTask.from_pretrained(config_path, config=runner_config.task_config, load_weight=load_weight)
@@ -18,6 +21,7 @@ def run(args):
 
     feature = BaseFeature.from_config(runner_config.feature_config)
 
+    print(task)
     trainer = Trainer(task=task, data_loader=data_loaders, config=runner_config.trainer_config)
     trainer.register_feature_transform_hook(feature)
 

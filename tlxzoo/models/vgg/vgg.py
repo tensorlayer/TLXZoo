@@ -68,7 +68,7 @@ def make_layers(layer_config, config):
                     )
                 )
                 if config.batch_norm:
-                    layer_list.append(BatchNorm(num_features=n_filter))
+                    layer_list.append(BatchNorm(num_features=n_filter, gamma_init="ones", moving_var_init="ones"))
                 if idx < (len(layer_group) - 1):
                     layer_list.append(Dropout(0.7))
                 if layer_name == config.end_with:
@@ -77,7 +77,9 @@ def make_layers(layer_config, config):
         else:
             layer_name = layer_names[layer_group_idx]
             if layer_group == 'M':
-                layer_list.append(MaxPool2d(filter_size=(2, 2), strides=(2, 2), padding='SAME', name=layer_name))
+                # padding="valid", strides=None
+                layer_list.append(MaxPool2d(filter_size=(2, 2), padding='valid', name=layer_name))
+                # layer_list.append(MaxPool2d(filter_size=(2, 2), strides=(2, 2), padding='SAME', name=layer_name))
             elif layer_group == 'O':
                 layer_list.append(Dense(n_units=1000, in_channels=config.fc2_units, name=layer_name))
             elif layer_group == 'F':
@@ -85,7 +87,7 @@ def make_layers(layer_config, config):
                 layer_list.append(Flatten(name='flatten'))
             elif layer_group == 'fc1':
                 layer_list.append(
-                    Dense(n_units=config.fc1_units, act=tlx.ReLU, name=layer_name))
+                    Dense(n_units=config.fc1_units, act=tlx.ReLU, in_channels=512, name=layer_name))
             elif layer_group == 'fc2':
                 layer_list.append(
                     Dense(n_units=config.fc2_units, act=tlx.ReLU, in_channels=config.fc1_units, name=layer_name))

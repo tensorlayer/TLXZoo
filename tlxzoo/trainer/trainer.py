@@ -67,8 +67,17 @@ class Trainer(object):
         self.register_evaluator_hook(metric)
 
     def train(self, n_epoch, print_freq, print_train_batch):
-        self.trainer.train(n_epoch=n_epoch, train_dataset=self.data_loader.train, print_freq=print_freq,
-                           print_train_batch=print_train_batch)
+        if hasattr(self.task, "loss_fn"):
+            self.register_loss_hook(self.task.loss_fn)
+
+        if self.data_loader.test:
+            self.trainer.train(n_epoch=n_epoch, train_dataset=self.data_loader.train,
+                               test_dataset=self.data_loader.test,
+                               print_freq=print_freq,
+                               print_train_batch=print_train_batch)
+        else:
+            self.trainer.train(n_epoch=n_epoch, train_dataset=self.data_loader.train, print_freq=print_freq,
+                               print_train_batch=print_train_batch)
 
     def save_task(self, path):
         self.task.save_pretrained(path)

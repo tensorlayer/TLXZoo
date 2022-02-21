@@ -27,6 +27,7 @@ class BaseTask(nn.Module, ModuleFromPretrainedMixin):
         return Registers.tasks[config.task_class](config, *args, **kwargs)
 
 
+@Registers.tasks.register
 class BaseForImageClassification(BaseTask):
     task_type = "image_classification"
 
@@ -37,6 +38,7 @@ class BaseForImageClassification(BaseTask):
             return super(BaseForImageClassification, self).__call__(*args, **kwargs).logits
 
 
+@Registers.tasks.register
 class BaseForObjectDetection(BaseTask):
     task_type = "object_detection"
 

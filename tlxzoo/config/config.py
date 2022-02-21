@@ -249,6 +249,7 @@ class BaseRunnerConfig(BaseConfig):
                  task_config: BaseTaskConfig,
                  trainer_config: BaseTrainerConfig,
                  infer_config: BaseInferConfig,
+                 backend="tensorflow",
                  **kwargs
                  ):
         self.data_config = data_config
@@ -256,6 +257,7 @@ class BaseRunnerConfig(BaseConfig):
         self.task_config = task_config
         self.trainer_config = trainer_config
         self.infer_config = infer_config
+        self.backend = backend
         super(BaseRunnerConfig, self).__init__(**kwargs)
 
     @classmethod

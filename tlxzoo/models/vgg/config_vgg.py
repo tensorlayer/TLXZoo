@@ -43,7 +43,7 @@ class VGGModelConfig(BaseModelConfig):
 
     def __init__(
             self,
-            end_with='fc2_relu',
+            end_with='fc1_relu',
             fc2_units=512,
             fc1_units=512,
             layer_type="vgg16",

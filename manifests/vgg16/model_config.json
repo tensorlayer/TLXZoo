@@ -1,0 +1,45 @@
+{
+    "end_with": "fc1_relu",
+    "batch_norm": true,
+    "fc2_units": 512,
+    "fc1_units": 512,
+    "layer_type": "vgg16",
+    "layers": [
+        [
+            64,
+            64
+        ],
+        "M",
+        [
+            128,
+            128
+        ],
+        "M",
+        [
+            256,
+            256,
+            256
+        ],
+        "M",
+        [
+            512,
+            512,
+            512
+        ],
+        "M",
+        [
+            512,
+            512,
+            512
+        ],
+        "M",
+        "F",
+        "fc1",
+        "fc2",
+        "O"
+    ],
+    "weights_path": "model.npz",
+    "model_class": "VGG",
+    "config_type": "model",
+    "config_class": "VGGModelConfig"
+}
