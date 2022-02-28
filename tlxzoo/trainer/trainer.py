@@ -1,7 +1,7 @@
 import tensorlayerx as tlx
 import numpy as np
 import random
-import os
+from .tlx_model import TLXModel
 
 
 def get_loss_from_config(config):
@@ -10,7 +10,7 @@ def get_loss_from_config(config):
 
 
 def get_optimizer_from_config(config):
-    optimizer = getattr(tlx.optimizers, config.optimizers)(*config.lr)
+    optimizer = getattr(tlx.optimizers, config.optimizers)(**config.lr)
     return optimizer
 
 
@@ -31,7 +31,8 @@ class Trainer(object):
         self.data_loader = data_loader
         self.auto_config = auto_config
 
-        self.trainer = tlx.model.Model(network=self.task)
+        self.trainer = TLXModel(network=self.task)
+        self.trainer.clip_epochs = self.config.clip_epochs
         self.register_hooks_from_config(self.config)
 
         self.feature = None

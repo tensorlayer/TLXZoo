@@ -15,14 +15,14 @@ class YOLOv4ForObjectDetectionTaskOutput(BaseForObjectDetectionTaskOutput):
 
 
 @Registers.tasks.register
-class YOLOv4ForImageClassification(BaseForObjectDetection):
+class YOLOv4ForObjectDetection(BaseForObjectDetection):
     config_class = YOLOv4ForObjectDetectionTaskConfig
 
     def __init__(self, config: YOLOv4ForObjectDetectionTaskConfig = None, model=None, **kwargs):
         if config is None:
             config = self.config_class(**kwargs)
 
-        super(YOLOv4ForImageClassification, self).__init__(config)
+        super(YOLOv4ForObjectDetection, self).__init__(config)
 
         if model is not None:
             self.yolo = model

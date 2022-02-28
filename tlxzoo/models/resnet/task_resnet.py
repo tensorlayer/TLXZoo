@@ -3,6 +3,7 @@ from .resnet import ResNet
 from ...utils.registry import Registers
 from ...utils.output import BaseForImageClassificationTaskOutput
 from .config_resnet import ResNetForImageClassificationTaskConfig
+from ...utils import glorot_uniform
 import tensorlayerx as tlx
 
 
@@ -22,24 +23,25 @@ class ResNetForImageClassification(BaseForImageClassification):
             self.resnet = ResNet(self.config.model_config)
 
         self.num_labels = config.num_labels
-        try:
-            in_channels = self.config.model_config.get_last_output_size()[-1]
-            self.classifier = tlx.nn.Dense(n_units=self.num_labels, in_channels=in_channels, name="classifier")
-        except:
-            self.classifier = tlx.nn.Dense(n_units=self.num_labels, name="classifier")
+        self._final_conv = tlx.nn.Conv2d(self.num_labels, filter_size=(1, 1), strides=(1, 1), W_init=glorot_uniform,
+                                         b_init="zeros", in_channels=64, name="final_conv")
 
     def forward(self, pixels, labels=None):
         outs = self.resnet(pixels)
 
         last_out = outs.output
 
-        logits = self.classifier(last_out)
+        net = self._final_conv(last_out)
+        logits = tlx.squeeze(net, axis=[1, 2])
         if labels:
-            loss = tlx.losses.softmax_cross_entropy_with_logits(labels, logits)
+            loss = self.loss_fn(labels, logits)
         else:
             loss = None
 
         return BaseForImageClassificationTaskOutput(logits=logits, loss=loss)
 
+    def loss_fn(self, output, target):
+        loss = tlx.losses.softmax_cross_entropy_with_logits(output, target)
+        return loss
 
 

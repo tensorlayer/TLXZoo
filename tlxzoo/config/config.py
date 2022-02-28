@@ -225,18 +225,22 @@ class BaseTrainerConfig(BaseConfig):
 
     def __init__(self,
                  loss="softmax_cross_entropy_with_logits",
-                 optimizers="Momentum",
-                 lr=(0.05, 0.9),
+                 optimizers="Adam",
+                 lr=None,
                  metric="Accuracy",
                  seed=42,
                  epochs=5,
+                 clip_epochs=None,
                  **kwargs):
+        if lr is None:
+            lr = {"learning_rate": 0.0001}
         self.loss = loss
         self.optimizers = optimizers
         self.lr = lr
         self.metric = metric
         self.seed = seed
         self.epochs = epochs
+        self.clip_epochs = clip_epochs
         super(BaseTrainerConfig, self).__init__(**kwargs)
 
 

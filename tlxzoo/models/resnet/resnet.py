@@ -1,168 +1,154 @@
-"""ResNet for ImageNet.
-# Reference:
-- [Deep Residual Learning for Image Recognition](
-    https://arxiv.org/abs/1512.03385) (CVPR 2016 Best Paper Award)
-"""
+import tensorlayerx as tlx
+from ...utils.output import BaseModelOutput
 from ..model import BaseModule
 from ...utils.registry import Registers
-from tensorlayerx import logging
-
-from tensorlayerx.nn import (BatchNorm, Conv2d, Dense, Elementwise, GlobalMeanPool2d, MaxPool2d)
-from tensorlayerx.nn import Module, SequentialLayer
-import os
-from ...utils.output import BaseModelOutput
-from dataclasses import dataclass
-import tensorlayerx as tlx
-
-__all__ = ["ResNet"]
-
-block_names = ['2a', '2b', '2c', '3a', '3b', '3c', '3d', '4a', '4b', '4c', '4d', '4e', '4f', '5a', '5b', '5c'] + [
-    'avg_pool', 'fc1000']
-block_filters = [[64, 64, 256], [128, 128, 512], [256, 256, 1024], [512, 512, 2048]]
-in_channels_conv = [64, 256, 512, 1024]
-in_channels_identity = [256, 512, 1024, 2048]
-henorm = tlx.nn.initializers.he_normal()
-
-
-@dataclass
-class ResNetModelOutput(BaseModelOutput):
-    ...
-
-
-class IdentityBlock(Module):
-    """The identity block where there is no conv layer at shortcut.
-    Parameters
-    ----------
-    input : tf tensor
-        Input tensor from above layer.
-    kernel_size : int
-        The kernel size of middle conv layer at main path.
-    n_filters : list of integers
-        The numbers of filters for 3 conv layer at main path.
-    stage : int
-        Current stage label.
-    block : str
-        Current block label.
-    Returns
-    -------
-        Output tensor of this block.
-    """
-
-    def __init__(self, config, n_filters, stage, block):
-        super(IdentityBlock, self).__init__()
-        filters1, filters2, filters3 = n_filters
-        _in_channels = in_channels_identity[stage - 2]
-        conv_name_base = 'res' + str(stage) + block + '_branch'
-        bn_name_base = 'bn' + str(stage) + block + '_branch'
-
-        self.conv1 = Conv2d(filters1, (1, 1), W_init=henorm, name=conv_name_base + '2a', in_channels=_in_channels)
-        self.bn1 = BatchNorm(name=bn_name_base + '2a', act='relu', num_features=filters1)
-
-        ks = (config.identity_block_kernel_size, config.identity_block_kernel_size)
-        self.conv2 = Conv2d(
-            filters2, ks, padding='SAME', W_init=henorm, name=conv_name_base + '2b', in_channels=filters1
-        )
-        self.bn2 = BatchNorm(name=bn_name_base + '2b', act='relu', num_features=filters2)
-
-        self.conv3 = Conv2d(filters3, (1, 1), W_init=henorm, name=conv_name_base + '2c', in_channels=filters2)
-        self.bn3 = BatchNorm(name=bn_name_base + '2c', num_features=filters3)
-
-        self.add = Elementwise(tlx.add, act='relu')
-
-    def forward(self, inputs):
-        output = self.conv1(inputs)
-        output = self.bn1(output)
-        output = self.conv2(output)
-        output = self.bn2(output)
-        output = self.conv3(output)
-        output = self.bn3(output)
-        result = self.add([output, inputs])
-        return result
-
-
-class ConvBlock(Module):
-
-    def __init__(self, config, n_filters, stage, block, strides=(2, 2)):
-        super(ConvBlock, self).__init__()
-        filters1, filters2, filters3 = n_filters
-        _in_channels = in_channels_conv[stage - 2]
-        conv_name_base = 'res' + str(stage) + block + '_branch'
-        bn_name_base = 'bn' + str(stage) + block + '_branch'
-        self.conv1 = Conv2d(
-            filters1, (1, 1), strides=strides, W_init=henorm, name=conv_name_base + '2a', in_channels=_in_channels
-        )
-        self.bn1 = BatchNorm(name=bn_name_base + '2a', act='relu', num_features=filters1)
-
-        ks = (config.conv_block_kernel_size, config.conv_block_kernel_size)
-        self.conv2 = Conv2d(
-            filters2, ks, padding='SAME', W_init=henorm, name=conv_name_base + '2b', in_channels=filters1
-        )
-        self.bn2 = BatchNorm(name=bn_name_base + '2b', act='relu', num_features=filters2)
-
-        self.conv3 = Conv2d(filters3, (1, 1), W_init=henorm, name=conv_name_base + '2c', in_channels=filters2)
-        self.bn3 = BatchNorm(name=bn_name_base + '2c', num_features=filters3)
-
-        self.shortcut_conv = Conv2d(
-            filters3, (1, 1), strides=strides, W_init=henorm, name=conv_name_base + '1', in_channels=_in_channels
-        )
-        self.shortcut_bn = BatchNorm(name=bn_name_base + '1', num_features=filters3)
-
-        self.add = Elementwise(tlx.add, act='relu')
-
-    def forward(self, inputs):
-        output = self.conv1(inputs)
-        output = self.bn1(output)
-        output = self.conv2(output)
-        output = self.bn2(output)
-        output = self.conv3(output)
-        output = self.bn3(output)
-
-        shortcut = self.shortcut_conv(inputs)
-        shortcut = self.shortcut_bn(shortcut)
-
-        result = self.add([output, shortcut])
-        return result
+from .config_resnet import ResNetModelConfig
+from ...utils import glorot_uniform
 
 
 @Registers.models.register
 class ResNet(BaseModule):
-    def __init__(self, config):
-        super(ResNet, self).__init__(config)
-        self.end_with = self.config.end_with
-        self.n_classes = self.config.n_classes
-        self.conv1 = Conv2d(self.config.conv1_n_filter, self.config.conv1_filter_size,
-                            in_channels=self.config.conv1_in_channels, strides=self.config.conv1_strides,
-                            padding='SAME', W_init=henorm, name='conv1')
-        self.bn_conv1 = BatchNorm(name='bn_conv1', act="relu", num_features=self.config.bn_conv1_num_features)
-        self.max_pool1 = MaxPool2d(self.config.max_pool1_filter_size, strides=self.config.max_pool1_strides,
-                                   name='max_pool1')
-        self.res_layer = self.make_layer()
+    config_class = ResNetModelConfig
+
+    def __init__(self,
+                 config, **kwargs):
+        if config is None:
+            config = self.config_class(**kwargs)
+        super(ResNet, self).__init__(config, **kwargs)
+
+        num_layers = config.num_layers
+        shortcut_connection = config.shortcut_connection
+        weight_decay = config.weight_decay
+        batch_norm_momentum = config.batch_norm_momentum
+        batch_norm_epsilon = config.batch_norm_epsilon
+        drop_rate = config.drop_rate
+
+        if num_layers not in (20, 32, 44, 56, 110):
+            raise ValueError('num_layers must be one of 20, 32, 44, 56 or 110.')
+
+        self._num_layers = num_layers
+        self._shortcut_connection = shortcut_connection
+        self._weight_decay = weight_decay
+        self._batch_norm_momentum = batch_norm_momentum
+        self._batch_norm_epsilon = batch_norm_epsilon
+
+        self._num_units = (num_layers - 2) // 6
+
+        self._init_conv = tlx.nn.Conv2d(16, in_channels=3, W_init=glorot_uniform, b_init=None, name="init_conv")
+        self.dropout_1 = tlx.nn.Dropout(keep=1 - drop_rate)
+
+        self._block1 = tlx.nn.SequentialLayer([ResNetUnit(
+            16,
+            1,
+            shortcut_connection,
+            True if i == 0 else False,
+            weight_decay,
+            batch_norm_momentum,
+            batch_norm_epsilon,
+            'res_net_unit_1_%d' % (i + 1), drop_rate=drop_rate) for i in range(self._num_units)])
+
+        self._block2 = tlx.nn.SequentialLayer([ResNetUnit(
+            32,
+            2 if i == 0 else 1,
+            shortcut_connection,
+            False if i == 0 else False,
+            weight_decay,
+            batch_norm_momentum,
+            batch_norm_epsilon,
+            'res_net_unit_2_%d' % (i + 1), drop_rate=drop_rate) for i in range(self._num_units)])
+
+        self._block3 = tlx.nn.SequentialLayer([ResNetUnit(
+            64,
+            2 if i == 0 else 1,
+            shortcut_connection,
+            False if i == 0 else False,
+            weight_decay,
+            batch_norm_momentum,
+            batch_norm_epsilon,
+            'res_net_unit_3_%d' % (i + 1), drop_rate=drop_rate) for i in range(self._num_units)])
+
+        self._final_bn = tlx.nn.BatchNorm(decay=batch_norm_momentum, epsilon=batch_norm_epsilon, num_features=64,
+                                          act=tlx.ReLU,
+                                          gamma_init="ones", moving_var_init="ones", name="final_bn")
+        self.dropout_2 = tlx.nn.Dropout(keep=1 - drop_rate)
+
+        # self._final_conv = tlx.nn.Conv2d(10, filter_size=(1, 1), strides=(1, 1), W_init=glorot_uniform,
+        #                                  b_init="zeros", in_channels=64, name="final_conv")
+        #
+        # self._softmax = tlx.softmax
 
     def forward(self, inputs):
-        z = self.conv1(inputs)
-        z = self.bn_conv1(z)
-        z = self.max_pool1(z)
-        z = self.res_layer(z)
-        return ResNetModelOutput(output=z)
+        net = inputs
+        net = self._init_conv(net)
+        net = self.dropout_1(net)
 
-    def make_layer(self):
-        layer_list = []
-        for i, block_name in enumerate(block_names):
-            if len(block_name) == 2:
-                stage = int(block_name[0])
-                block = block_name[1]
-                if block == 'a':
-                    strides = (1, 1) if stage == 2 else (2, 2)
-                    layer_list.append(
-                        ConvBlock(self.config, block_filters[stage - 2], stage=stage, block=block, strides=strides)
-                    )
-                else:
-                    layer_list.append(IdentityBlock(self.config, block_filters[stage - 2], stage=stage, block=block))
-            elif block_name == 'avg_pool':
-                layer_list.append(GlobalMeanPool2d(name='avg_pool'))
-            elif block_name == 'fc1000':
-                layer_list.append(Dense(self.n_classes, name='fc1000', in_channels=2048))
+        net = self._block1(net)
+        net = self._block2(net)
+        net = self._block3(net)
 
-            if block_name == self.end_with:
-                break
-        return SequentialLayer(layer_list)
+        net = self._final_bn(net)
+        # net = tlx.relu(net)
+        net = self.dropout_2(net)
+        net = tlx.reduce_mean(net, [1, 2], keepdims=True)
+        # net = self._final_conv(net)
+        # net = tlx.squeeze(net, axis=[1, 2])
+        # net = self._softmax(net)
+
+        return BaseModelOutput(output=net)
+
+
+class ResNetUnit(tlx.nn.Module):
+    def __init__(self,
+                 depth,
+                 stride,
+                 shortcut_connection,
+                 shortcut_from_preact,
+                 weight_decay,
+                 batch_norm_momentum,
+                 batch_norm_epsilon,
+                 name, drop_rate=0.05):
+        super(ResNetUnit, self).__init__(name=name)
+        self._depth = depth
+        self._stride = stride
+        self._shortcut_connection = shortcut_connection
+        self._shortcut_from_preact = shortcut_from_preact
+        self._weight_decay = weight_decay
+
+        self._bn1 = tlx.nn.BatchNorm(decay=batch_norm_momentum, epsilon=batch_norm_epsilon,
+                                     num_features=depth if stride == 1 else int(depth / 2),
+                                     gamma_init="ones", moving_var_init="ones", name="batchnorm_1")
+
+        self.dropout_1 = tlx.nn.Dropout(keep=1 - drop_rate)
+
+        self._conv1 = tlx.nn.Conv2d(depth, (3, 3), (stride, stride),
+                                    in_channels=depth if stride == 1 else int(depth / 2),
+                                    W_init=glorot_uniform, b_init=None, name="conv1")
+
+        self._bn2 = tlx.nn.BatchNorm(decay=batch_norm_momentum, epsilon=batch_norm_epsilon,
+                                     num_features=depth,
+                                     gamma_init="ones", moving_var_init="ones", name="batchnorm_2")
+        self.dropout_2 = tlx.nn.Dropout(keep=1 - drop_rate)
+
+        self._conv2 = tlx.nn.Conv2d(depth, (3, 3), (1, 1), in_channels=depth if stride == 1 else int(depth / 2),
+                                    W_init=glorot_uniform, b_init=None, name="conv2")
+
+    def forward(self, inputs):
+        depth_in = inputs.shape[3]
+        depth = self._depth
+        preact = tlx.relu(self._bn1(inputs))
+        preact = self.dropout_1(preact)
+
+        shortcut = preact if self._shortcut_from_preact else inputs
+
+        if depth != depth_in:
+            shortcut = tlx.backend.ops.avg_pool(shortcut, (2, 2), strides=(1, 2, 2, 1), padding='SAME')
+            shortcut = tlx.pad(shortcut, [[0, 0], [0, 0], [0, 0], [(depth - depth_in) // 2] * 2])
+
+        net = self._conv1(preact)
+        residual = tlx.relu(self._bn2(net))
+        residual = self.dropout_2(residual)
+        residual = self._conv2(residual)
+
+        output = residual + shortcut if self._shortcut_connection else residual
+
+        return output

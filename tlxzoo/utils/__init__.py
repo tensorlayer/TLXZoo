@@ -16,3 +16,12 @@ from .output import (BaseModelOutput,
                      BaseForImageClassificationTaskOutput)
 
 from .registry import Registers
+
+from tensorlayerx.backend import BACKEND
+if BACKEND == "tensorflow":
+    from tensorflow.python.keras import initializers
+
+    glorot_uniform = initializers.get("glorot_uniform")
+else:
+    glorot_uniform = "truncated_normal"
+
