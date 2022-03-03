@@ -1,4 +1,4 @@
 # ResNet
 
 ## Result
-acc: 92.05%
+acc: 92.13%

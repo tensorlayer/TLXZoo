@@ -68,14 +68,11 @@ class ResNet(BaseModule):
             'res_net_unit_3_%d' % (i + 1), drop_rate=drop_rate) for i in range(self._num_units)])
 
         self._final_bn = tlx.nn.BatchNorm(decay=batch_norm_momentum, epsilon=batch_norm_epsilon, num_features=64,
-                                          act=tlx.ReLU,
                                           gamma_init="ones", moving_var_init="ones", name="final_bn")
         self.dropout_2 = tlx.nn.Dropout(keep=1 - drop_rate)
 
         # self._final_conv = tlx.nn.Conv2d(10, filter_size=(1, 1), strides=(1, 1), W_init=glorot_uniform,
         #                                  b_init="zeros", in_channels=64, name="final_conv")
-        #
-        # self._softmax = tlx.softmax
 
     def forward(self, inputs):
         net = inputs
@@ -87,12 +84,11 @@ class ResNet(BaseModule):
         net = self._block3(net)
 
         net = self._final_bn(net)
-        # net = tlx.relu(net)
+        net = tlx.relu(net)
         net = self.dropout_2(net)
         net = tlx.reduce_mean(net, [1, 2], keepdims=True)
         # net = self._final_conv(net)
         # net = tlx.squeeze(net, axis=[1, 2])
-        # net = self._softmax(net)
 
         return BaseModelOutput(output=net)
 
@@ -141,8 +137,16 @@ class ResNetUnit(tlx.nn.Module):
         shortcut = preact if self._shortcut_from_preact else inputs
 
         if depth != depth_in:
-            shortcut = tlx.backend.ops.avg_pool(shortcut, (2, 2), strides=(1, 2, 2, 1), padding='SAME')
-            shortcut = tlx.pad(shortcut, [[0, 0], [0, 0], [0, 0], [(depth - depth_in) // 2] * 2])
+
+            if tlx.ops.load_backend.BACKEND == "tensorflow":
+                import tensorflow as tf
+                shortcut = tf.nn.avg_pool2d(
+                    shortcut, (2, 2), strides=(1, 2, 2, 1), padding='SAME')
+                shortcut = tf.pad(
+                    shortcut, [[0, 0], [0, 0], [0, 0], [(depth - depth_in) // 2] * 2])
+            else:
+                shortcut = tlx.backend.ops.avg_pool(shortcut, (2, 2), strides=(1, 2, 2, 1), padding='SAME')
+                shortcut = tlx.pad(shortcut, [[0, 0], [0, 0], [0, 0], [(depth - depth_in) // 2] * 2])
 
         net = self._conv1(preact)
         residual = tlx.relu(self._bn2(net))
