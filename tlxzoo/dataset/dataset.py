@@ -1,6 +1,7 @@
 from tensorlayerx import logging
 from tensorlayerx.dataflow import Dataset
 import tensorlayerx as tlx
+import numpy as np
 import random
 from ..utils.registry import Registers
 
@@ -104,3 +105,23 @@ class Cifar10DataSetDict(BaseDataSetDict):
             dataset = self["test"]
 
         return dataset
+
+
+@Registers.datasets.register("Coco")
+class CocoDataSetDict(BaseDataSetDict):
+    @classmethod
+    def load(cls, image_path, train_ann_path, val_ann_path):
+        def load_ann(annot_path):
+            with open(annot_path, "r") as f:
+                txt = f.readlines()
+                annotations = [
+                    line.strip()
+                    for line in txt
+                    if len(line.strip().split()[1:]) != 0
+                ]
+            np.random.shuffle(annotations)
+            return annotations
+
+        train_ann = load_ann(train_ann_path)
+
+

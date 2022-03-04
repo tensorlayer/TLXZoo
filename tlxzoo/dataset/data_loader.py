@@ -88,20 +88,22 @@ class DataLoaders(object):
 
         return cls(config)
 
-    def dataset_dataloader(self, dataset, dataset_type="train"):
+    def dataset_dataloader(self, dataset, dataset_type="train", num_workers=8):
         # validate
         dataset.validate(self.config.schema)
 
-        output_types = self.config.schema.get_dtypes()
-        column_names = self.config.schema.get_names()
-        dataset = tlx.dataflow.FromGenerator(
-            dataset, output_types=output_types, column_names=column_names
-        )
+        # output_types = self.config.schema.get_dtypes()
+        # column_names = self.config.schema.get_names()
+        # dataset = tlx.dataflow.FromGenerator(
+        #     dataset, output_types=output_types, column_names=column_names
+        # )
 
         if dataset_type == "train":
-            train_loader = tlx.dataflow.Dataloader(dataset,
+            train_loader = tlx.dataflow.DataLoader(dataset,
                                                    batch_size=self.config.per_device_train_batch_size,
+                                                   prefetch_factor=self.config.per_device_train_batch_size,
+                                                   num_workers=num_workers,
                                                    shuffle=True)
             return train_loader
         else:
-            return tlx.dataflow.Dataloader(dataset, batch_size=self.config.per_device_eval_batch_size, shuffle=False)
+            return tlx.dataflow.DataLoader(dataset, batch_size=self.config.per_device_eval_batch_size, shuffle=False)

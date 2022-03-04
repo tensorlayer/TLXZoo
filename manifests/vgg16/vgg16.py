@@ -12,6 +12,7 @@ from tlxzoo.models.vgg.config_vgg import *
 
 from tlxzoo.config.config import BaseImageFeatureConfig
 from tlxzoo.models.vgg.feature_vgg import VGGFeature
+from tlxzoo.trainer.trainer import TLXModel
 import numpy as np
 import random
 np.random.seed(42)
@@ -22,19 +23,6 @@ image_feat_config = BaseImageFeatureConfig(do_resize=False, do_normalize=True, m
 vgg_feature = VGGFeature(image_feat_config)
 
 X_train, y_train, X_test, y_test = tlx.files.load_cifar10_dataset(shape=(-1, 32, 32, 3), plotable=False)
-
-# def normalization(train_images, test_images):
-#     mean = np.mean(train_images, axis=(0, 1, 2, 3))
-#     std = np.std(train_images, axis=(0, 1, 2, 3))
-#     train_images = (train_images - mean) / (std + 1e-7)
-#     test_images = (test_images - mean) / (std + 1e-7)
-#     return train_images, test_images
-#
-#
-# X_train = X_train.astype(np.float32)
-# X_test = X_test.astype(np.float32)
-#
-# (X_train, X_test) = normalization(X_train, X_test)
 
 
 class mnistdataset(Dataset):
@@ -103,21 +91,24 @@ loss_fn = loss_function
 
 train_dataset = mnistdataset(data=X_train, label=y_train, if_train=True)
 train_dataset.register_feature_transform_hook(vgg_feature)
-train_dataset2 = tlx.dataflow.FromGenerator(
-    train_dataset, output_types=[tlx.float32, tlx.int64], column_names=['data', 'label']
-)
-train_loader = tlx.dataflow.Dataloader(train_dataset2, batch_size=batch_size, shuffle=True)
+# train_dataset2 = tlx.dataflow.FromGenerator(
+#     train_dataset, output_types=[tlx.float32, tlx.int64], column_names=['data', 'label']
+# )
+train_loader = tlx.dataflow.DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+                                       num_workers=8, prefetch_factor=batch_size)
 
 
 test_dataset = mnistdataset(data=X_test, label=y_test)
 test_dataset.register_feature_transform_hook(vgg_feature)
 
-test_dataset = tlx.dataflow.FromGenerator(
-    test_dataset, output_types=[tlx.float32, tlx.int64], column_names=['data', 'label']
-)
-test_loader = tlx.dataflow.Dataloader(test_dataset, batch_size=batch_size, shuffle=True)
+# test_dataset = tlx.dataflow.FromGenerator(
+#     test_dataset, output_types=[tlx.float32, tlx.int64], column_names=['data', 'label']
+# )
+test_loader = tlx.dataflow.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 vgg16_task.set_train()
-model = tlx.model.Model(network=vgg16_task, loss_fn=loss_fn, optimizer=optimizer, metrics=metric)
-model.train(n_epoch=n_epoch, train_dataset=train_loader, test_dataset=test_loader, print_freq=print_freq, print_train_batch=False)
+model = TLXModel(network=vgg16_task, loss_fn=loss_fn, optimizer=optimizer, metrics=metric)
+model.clip_epochs = None
+model.train(n_epoch=n_epoch, train_dataset=train_loader, test_dataset=test_loader, print_freq=print_freq,
+            print_train_batch=False)
 

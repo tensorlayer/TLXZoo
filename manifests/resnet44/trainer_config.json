@@ -8,7 +8,10 @@
     "metric": "Accuracy",
     "seed": 42,
     "epochs": 800,
-    "clip_epochs": null,
+    "clip_epochs": [
+        0,
+        60
+    ],
     "config_type": "trainer",
     "config_class": "BaseTrainerConfig"
 }

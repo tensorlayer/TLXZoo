@@ -9,10 +9,7 @@
         0.1
     ],
     "random_flip_horizontal_prop": 0.5,
-    "random_crop_size": [
-        32,
-        4
-    ],
+    "random_crop_size": null,
     "config_type": "data",
     "config_class": "ImageClassificationDataConfig"
 }
