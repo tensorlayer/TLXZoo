@@ -218,6 +218,10 @@ class BaseInferConfig(BaseConfig):
 class BaseDataConfig(BaseConfig):
     config_type = "data"
 
+    def __init__(self, num_workers=8, **kwargs):
+        self.num_workers = num_workers
+        super(BaseDataConfig, self).__init__(**kwargs)
+
 
 @Registers.trainer_configs.register
 class BaseTrainerConfig(BaseConfig):

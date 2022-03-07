@@ -37,6 +37,8 @@ class VGGFeature(BaseImageFeature):
         if not isinstance(images, (list, tuple)):
             images = [images]
 
+        images = [image.astype('float32') for image in images]
+
         if self.config.do_resize:
             images = [self.resize(image=image, size=self.resize_size) for image in images]
 

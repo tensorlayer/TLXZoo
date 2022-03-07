@@ -1,9 +1,9 @@
 import tensorlayerx as tlx
 from ..config import BaseDataConfig
-from .task_schema import image_classification_task_data_set_schema
-from ..task import BaseForImageClassification
+from .task_schema import image_classification_task_data_set_schema, object_detection_task_data_set_schema
+from ..task import BaseForImageClassification, BaseForObjectDetection
 from ..utils.registry import Registers
-from .data_random import DataRandom
+import numpy as np
 
 
 @Registers.data_configs.register
@@ -14,7 +14,7 @@ class ImageClassificationDataConfig(BaseDataConfig):
     def __init__(self,
                  per_device_train_batch_size=2,
                  per_device_eval_batch_size=2,
-                 data_name="Mnist",
+                 data_name="Cifar10",
                  random_rotation_degrees=15,
                  random_shift=(0.1, 0.1),
                  random_flip_horizontal_prop=0.5,
@@ -31,35 +31,64 @@ class ImageClassificationDataConfig(BaseDataConfig):
         super(ImageClassificationDataConfig, self).__init__(**kwargs)
 
 
+class ImageDetectionDataConfig(BaseDataConfig):
+    task = BaseForObjectDetection
+    schema = object_detection_task_data_set_schema
+
+    def __init__(self,
+                 per_device_train_batch_size=2,
+                 per_device_eval_batch_size=2,
+                 data_name="Coco",
+                 train_ann_path="",
+                 val_ann_path="",
+                 strides=np.array([8, 16, 32]),
+                 anchors=np.array(
+                     [12, 16, 19, 36, 40, 28, 36, 75, 76, 55, 72, 146, 142, 110, 192, 243, 459, 401]).reshape(3, 3, 2),
+                 num_classes=80,
+                 anchor_per_scale=3,
+                 max_bbox_per_scale=150,
+                 train_output_sizes=np.array([52, 26, 13]),
+                 train_input_size=416,
+                 **kwargs):
+        self.per_device_train_batch_size = per_device_train_batch_size
+        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.data_name = data_name
+        self.task_type = self.task.task_type
+        self.train_ann_path = train_ann_path
+        self.val_ann_path = val_ann_path
+        self.strides = strides
+        self.anchors = anchors
+        self.num_classes = num_classes
+        self.anchor_per_scale = anchor_per_scale
+        self.max_bbox_per_scale = max_bbox_per_scale
+        self.train_output_sizes = train_output_sizes
+        self.train_input_size = train_input_size
+        super(ImageDetectionDataConfig, self).__init__(**kwargs)
+
+
 # _configs = {BaseForImageClassification.task_type: ImageClassificationDataConfig}
 
 
 class DataLoaders(object):
     def __init__(self, config, train_limit=None):
         self.config = config
-        self.dataset_dict = Registers.datasets[self.config.data_name].load(train_limit)
+        self.dataset_dict = Registers.datasets[self.config.data_name].load(train_limit, config=self.config)
 
         get_schema_dataset_func = getattr(self.dataset_dict, f"get_{self.config.task_type}_schema_dataset")
 
-        data_random_hook = DataRandom(random_rotation_degrees=self.config.random_rotation_degrees,
-                                      random_shift=self.config.random_shift,
-                                      random_flip_horizontal_prop=self.config.random_flip_horizontal_prop,
-                                      random_crop_size=self.config.random_crop_size)
-
         if "train" in self.dataset_dict:
-            train_data = get_schema_dataset_func("train")
-            train_data.register_random_transform_hook(data_random_hook)
-            self.train = self.dataset_dataloader(train_data, dataset_type="train")
+            train_data = get_schema_dataset_func("train", config)
+            self.train = self.dataset_dataloader(train_data, dataset_type="train", num_workers=config.num_workers)
         else:
             self.train = None
 
         if "eval" in self.dataset_dict:
-            self.eval = self.dataset_dataloader(get_schema_dataset_func("eval"), dataset_type="eval")
+            self.eval = self.dataset_dataloader(get_schema_dataset_func("eval", config), dataset_type="eval")
         else:
             self.eval = None
 
         if "test" in self.dataset_dict:
-            self.test = self.dataset_dataloader(get_schema_dataset_func("test"), dataset_type="test")
+            self.test = self.dataset_dataloader(get_schema_dataset_func("test", config), dataset_type="test")
         else:
             self.test = None
 
@@ -99,11 +128,16 @@ class DataLoaders(object):
         # )
 
         if dataset_type == "train":
-            train_loader = tlx.dataflow.DataLoader(dataset,
-                                                   batch_size=self.config.per_device_train_batch_size,
-                                                   prefetch_factor=self.config.per_device_train_batch_size,
-                                                   num_workers=num_workers,
-                                                   shuffle=True)
+            if num_workers == 0:
+                train_loader = tlx.dataflow.DataLoader(dataset,
+                                                       batch_size=self.config.per_device_train_batch_size,
+                                                       shuffle=True)
+            else:
+                train_loader = tlx.dataflow.DataLoader(dataset,
+                                                       batch_size=self.config.per_device_train_batch_size,
+                                                       prefetch_factor=self.config.per_device_train_batch_size,
+                                                       num_workers=num_workers,
+                                                       shuffle=True)
             return train_loader
         else:
             return tlx.dataflow.DataLoader(dataset, batch_size=self.config.per_device_eval_batch_size, shuffle=False)

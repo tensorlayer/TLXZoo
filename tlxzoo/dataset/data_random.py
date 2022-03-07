@@ -30,7 +30,7 @@ class DataRandom(object):
         else:
             self.RandomCrop = None
 
-    def __call__(self, x):
+    def __call__(self, x, label):
         if self.RandomRotation:
             x = self.RandomRotation(x)
 
@@ -43,7 +43,7 @@ class DataRandom(object):
         if self.RandomCrop:
             x = self.RandomCrop(x)
 
-        return x
+        return x, label
 
 
 class KerasDataRandom(object):

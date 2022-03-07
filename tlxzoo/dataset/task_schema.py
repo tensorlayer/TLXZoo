@@ -32,9 +32,12 @@ image_classification_task_data_set_schema = TaskDataSetSchema(
     {"img": SchemaType(name="img", dtype=tlx.float32, schema=np.ndarray),
      "label": SchemaType(name="label", dtype=tlx.int64, schema=np.int64)}, ignore_extra_keys=True)
 
+object_detection_task_data_set_schema = TaskDataSetSchema(
+    {"img": SchemaType(name="img", dtype=tlx.float32, schema=np.ndarray),
+     "label": SchemaType(name="label", dtype=tlx.float32, schema=tuple)}, ignore_extra_keys=True)
+
 
 if __name__ == '__main__':
-    d = {"img": np.array([1.0, 2.0]), "label": 2}
-    print(Schema({'img': np.ndarray, 'label': int}).validate(d))
+    d = {"img": np.array([1.0, 2.0]), "label": np.array([1])[0].astype("int64")}
 
     print(image_classification_task_data_set_schema.validate(d))
