@@ -246,7 +246,7 @@ def preprocess_true_boxes(config, bboxes):
             bbox_count[best_detect] += 1
     label_sbbox, label_mbbox, label_lbbox = label
     sbboxes, mbboxes, lbboxes = bboxes_xywh
-    return label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes
+    return (label_sbbox, sbboxes), (label_mbbox, mbboxes), (label_lbbox, lbboxes)
 
 
 def bbox_iou(bboxes1, bboxes2):

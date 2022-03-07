@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from dataclasses import dataclass, fields
-from typing import Optional
+from typing import Optional, Union
 import tensorlayerx as tlx
 
 if tlx.BACKEND == "tensorflow":

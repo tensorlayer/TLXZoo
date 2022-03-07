@@ -42,3 +42,8 @@ class BaseForImageClassification(BaseTask):
 class BaseForObjectDetection(BaseTask):
     task_type = "object_detection"
 
+    def __call__(self, *args, return_output=False, **kwargs):
+        if return_output:
+            return super(BaseForObjectDetection, self).__call__(*args, **kwargs)
+        else:
+            return super(BaseForObjectDetection, self).__call__(*args, **kwargs).logits

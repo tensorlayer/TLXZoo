@@ -5,7 +5,6 @@
 """
 from ..model import BaseModule
 from ...utils.registry import Registers
-import numpy as np
 import tensorlayerx as tlx
 from tensorlayerx.nn import Mish
 from tensorlayerx.nn import Conv2d, MaxPool2d, BatchNorm2d, ZeroPad2d, UpSampling2d, Concat, Elementwise
@@ -15,6 +14,12 @@ from dataclasses import dataclass
 from ...utils.output import BaseModelOutput, float_tensor
 
 __all__ = ['YOLOv4']
+
+if tlx.ops.load_backend.BACKEND == "tensorflow":
+    import tensorflow as tf
+    random_normal_initializer = tf.random_normal_initializer(stddev=0.01)
+else:
+    random_normal_initializer = 'RandomNormal'
 
 
 @dataclass
@@ -52,7 +57,7 @@ class Convolutional(Module):
         self.zeropad = ZeroPad2d(((1, 0), (1, 0)))
         self.conv = Conv2d(
             n_filter=filters_shape[-1], in_channels=filters_shape[2], filter_size=(filters_shape[0], filters_shape[1]),
-            strides=(strides, strides), padding=padding, b_init=b_init, name=name
+            strides=(strides, strides), padding=padding, b_init=b_init, name=name, W_init=random_normal_initializer
         )
 
         if bn:
