@@ -24,26 +24,28 @@ class BaseTask(nn.Module, ModuleFromPretrainedMixin):
 
     @classmethod
     def from_config(cls, config, *args, **kwargs):
+        if not hasattr(config, "task_class") and cls is not BaseTask:
+            return cls(config, *args, **kwargs)
         return Registers.tasks[config.task_class](config, *args, **kwargs)
+
+    def __call__(self, *args, return_output=False, **kwargs):
+        if return_output:
+            return super(BaseTask, self).__call__(*args, **kwargs)
+        else:
+            return super(BaseTask, self).__call__(*args, **kwargs).logits
 
 
 @Registers.tasks.register
 class BaseForImageClassification(BaseTask):
     task_type = "image_classification"
 
-    def __call__(self, *args, return_output=False, **kwargs):
-        if return_output:
-            return super(BaseForImageClassification, self).__call__(*args, **kwargs)
-        else:
-            return super(BaseForImageClassification, self).__call__(*args, **kwargs).logits
-
 
 @Registers.tasks.register
 class BaseForObjectDetection(BaseTask):
     task_type = "object_detection"
 
-    def __call__(self, *args, return_output=False, **kwargs):
-        if return_output:
-            return super(BaseForObjectDetection, self).__call__(*args, **kwargs)
-        else:
-            return super(BaseForObjectDetection, self).__call__(*args, **kwargs).logits
+
+@Registers.tasks.register
+class BaseForConditionalGeneration(BaseTask):
+    task_type = "conditional_generation"
+

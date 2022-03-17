@@ -5,6 +5,7 @@ import copy
 from ..utils.registry import Registers
 from ..utils import MODEL_CONFIG, TASK_CONFIG, FEATURE_CONFIG, TRAINER_CONFIG, DATA_CONFIG, \
     INFER_CONFIG, RUNNER_CONFIG
+import numpy as np
 
 _config_type_name = {"": "",
                      "model": MODEL_CONFIG,
@@ -94,6 +95,9 @@ class BaseConfig(object):
         ...
 
     def _post_dict(self, _dict):
+        for key, value in _dict.items():
+            if isinstance(value, np.ndarray):
+                _dict[key] = value.tolist()
         return _dict
 
     def to_dict(self):
@@ -162,7 +166,7 @@ class BaseTaskConfig(BaseConfig):
     def _post_dict(self, _dict):
         del _dict["model_config"]
         _dict["model_config_path"] = MODEL_CONFIG
-        return _dict
+        return super(BaseTaskConfig, self)._post_dict(_dict)
 
     def _save_sub_pretrained(self, save_directory):
         self.model_config.save_pretrained(save_directory)

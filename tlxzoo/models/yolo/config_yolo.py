@@ -7,6 +7,7 @@ from ...utils.registry import Registers
 weights_url = {'link': 'https://pan.baidu.com/s/1MC1dmEwpxsdgHO1MZ8fYRQ', 'password': 'idsz'}
 
 
+@Registers.model_configs.register
 class YOLOv4ModelConfig(BaseModelConfig):
     model_type = "yolov4"
 
@@ -91,9 +92,8 @@ class YOLOv4ForObjectDetectionTaskConfig(BaseTaskConfig):
                  sconv_filters_shape=(1, 1, 256),
                  mconv_filters_shape=(1, 1, 512),
                  lconv_filters_shape=(1, 1, 1024),
-                 strides=np.array([8, 16, 32]),
-                 anchors=np.array(
-                     [12, 16, 19, 36, 40, 28, 36, 75, 76, 55, 72, 146, 142, 110, 192, 243, 459, 401]).reshape(3, 3, 2),
+                 strides=(8, 16, 32),
+                 anchors=(12, 16, 19, 36, 40, 28, 36, 75, 76, 55, 72, 146, 142, 110, 192, 243, 459, 401),
                  xyscale=(1.2, 1.1, 1.05),
                  iou_loss_thresh=0.5,
                  train_input_size=416,
@@ -102,8 +102,8 @@ class YOLOv4ForObjectDetectionTaskConfig(BaseTaskConfig):
         self.sconv_filters_shape = tuple(list(sconv_filters_shape) + [3 * (num_labels + 5)])
         self.mconv_filters_shape = tuple(list(mconv_filters_shape) + [3 * (num_labels + 5)])
         self.lconv_filters_shape = tuple(list(lconv_filters_shape) + [3 * (num_labels + 5)])
-        self.strides = strides
-        self.anchors = anchors
+        self.strides = np.array(strides)
+        self.anchors = np.array(anchors).reshape(3, 3, 2)
         self.xyscale = xyscale
         self.train_input_size = train_input_size
         self.iou_loss_thresh = iou_loss_thresh

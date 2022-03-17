@@ -1,3 +1,3 @@
-from .data_loader import DataLoaders, ImageClassificationDataConfig, ImageDetectionDataConfig
+from .data_loader import *
 from .dataset import MnistDataSetDict
 from .coco import CocoDataSetDict

@@ -13,12 +13,12 @@ class CocoDataSetDict(BaseDataSetDict):
 
         if dataset_type == "train":
             dataset = self["train"]
-            dataset.register_random_transform_hook(
-                lambda image, label: train_random_transform_hook(config, image, label))
+            dataset.register_transform_hook(lambda image, label: train_random_transform_hook(config, image, label),
+                                            index=1)
         else:
             dataset = self["test"]
-            dataset.register_random_transform_hook(
-                lambda image, label: test_random_transform_hook(config, image, label))
+            dataset.register_transform_hook(lambda image, label: test_random_transform_hook(config, image, label),
+                                            index=1)
 
         return dataset
 
@@ -47,13 +47,16 @@ class CocoDataSetDict(BaseDataSetDict):
             y_train = y_train[:train_limit]
         x_test, y_test = load_ann(config.val_ann_path)
 
-        def feature_transform_hook(image_paths):
-            return [cv2.imread(image_path) for image_path in image_paths]
+        def feature_transform_hook(image_paths, label):
+            return [cv2.imread(image_path) for image_path in image_paths], label
 
-        return cls({"train": BaseDataSet(x_train, y_train, feature_transforms=[feature_transform_hook],
-                                         label_transform=lambda arg: preprocess_true_boxes(config, arg)),
-                    "test": BaseDataSet(x_test, y_test, feature_transforms=[feature_transform_hook],
-                                        label_transform=lambda arg: preprocess_true_boxes(config, arg))})
+        def label_transform_hook(image, arg):
+            return image, preprocess_true_boxes(config, arg)
+
+        return cls({"train": BaseDataSet(x_train, y_train, transforms=[feature_transform_hook,
+                                                                       label_transform_hook]),
+                    "test": BaseDataSet(x_test, y_test, transforms=[feature_transform_hook,
+                                                                    label_transform_hook])})
 
 
 def train_random_transform_hook(config, image, label):

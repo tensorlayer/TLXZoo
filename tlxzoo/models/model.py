@@ -21,6 +21,8 @@ class BaseModule(nn.Module, ModuleFromPretrainedMixin):
 
     @classmethod
     def from_config(cls, config, *args, **kwargs):
+        if not hasattr(config, "model_class") and cls is not BaseModule:
+            return cls(config, *args, **kwargs)
         return Registers.models[config.model_class](config, *args, **kwargs)
 
     @classmethod

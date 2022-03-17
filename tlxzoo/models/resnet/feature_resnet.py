@@ -33,9 +33,10 @@ class ResNetFeature(BaseImageFeature):
 
         super(ResNetFeature, self).__init__(config, **kwargs)
 
-    def __call__(self, images, *args, **kwargs):
+    def __call__(self, images, label, *args, **kwargs):
         if not isinstance(images, (list, tuple)):
-            images = [images]
+            images, label = self.__call__([images], label)
+            return images[0], label
 
         images = [image.astype('float32') for image in images]
 
@@ -45,6 +46,6 @@ class ResNetFeature(BaseImageFeature):
         if self.config.do_normalize:
             images = [self.normalize(image=image, mean=self.mean, std=self.std) for image in images]
 
-        return np.array(images)
+        return np.array(images), label
 
 

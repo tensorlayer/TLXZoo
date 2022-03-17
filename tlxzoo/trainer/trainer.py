@@ -55,7 +55,7 @@ class Trainer(object):
 
     def register_feature_transform_hook(self, feature_transform_hook):
         self.feature = feature_transform_hook
-        self.data_loader.register_feature_transform_hook(feature_transform_hook)
+        self.data_loader.register_feature_transform_hook(feature_transform_hook, index=0)
 
     def register_hooks_from_config(self, config):
         loss_fn = get_loss_from_config(config)

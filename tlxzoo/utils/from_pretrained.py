@@ -1,6 +1,7 @@
 from tensorlayerx import nn, logging
 import os
 from tensorlayerx.files import maybe_download_and_extract
+import tensorlayerx as tlx
 
 
 class ModuleFromPretrainedMixin:
@@ -21,6 +22,15 @@ class ModuleFromPretrainedMixin:
 
         weights_path = config.weights_path
 
+        weight_from = kwargs.pop("weight_from", "tlx")
+        if weight_from == "huggingface":
+            if tlx.ops.load_backend.BACKEND == "tensorflow":
+                return module._load_huggingface_tf_weight(pretrained_base_path)
+            elif tlx.ops.load_backend.BACKEND == "pytorch":
+                return module._load_huggingface_pt_weight(pretrained_base_path)
+            else:
+                raise ValueError(f"BACKEND: {tlx.ops.load_backend.BACKEND} do not support huggingface weight loading.")
+
         if not weights_path.startswith("http"):
             if pretrained_base_path is None:
                 logging.warning("Don't load weight.")
@@ -37,6 +47,12 @@ class ModuleFromPretrainedMixin:
             weights_path = os.path.join(pretrained_base_path, name)
         module.load_weights(weights_path)
         return module
+
+    def _load_huggingface_tf_weight(self, weight_path):
+        raise NotImplementedError
+
+    def _load_huggingface_pt_weight(self, weight_path):
+        raise NotImplementedError
 
     def _save_pretrained(self, save_directory, name, format, save_weight=True):
         if os.path.isfile(save_directory):

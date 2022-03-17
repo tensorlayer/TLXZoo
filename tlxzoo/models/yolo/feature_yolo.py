@@ -18,8 +18,9 @@ class YOLOv4Feature(BaseImageFeature):
 
         super(YOLOv4Feature, self).__init__(config, **kwargs)
 
-    def __call__(self, images, *args, **kwargs):
+    def __call__(self, images, label, *args, **kwargs):
         if not isinstance(images, (list, tuple)):
-            images = [images]
+            images, label = self.__call__([images], label)
+            return images[0], label
 
-        return np.array(images)
+        return np.array(images), label

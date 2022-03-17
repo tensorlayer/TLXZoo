@@ -68,13 +68,20 @@ class YOLOv4ForObjectDetection(BaseForObjectDetection):
             loss_items = compute_loss(pred, conv, target_0, target_1, STRIDES=self.config.strides,
                                       NUM_CLASS=self.config.num_labels,
                                       IOU_LOSS_THRESH=self.config.iou_loss_thresh, i=i)
-            # if tlx.ops.is_nan(loss_items[0]):
-            #     giou_loss += 0
-            # else:
-            #     giou_loss += loss_items[0]
-            giou_loss += loss_items[0]
-            conf_loss += loss_items[1]
-            prob_loss += loss_items[2]
+            if tlx.is_nan(loss_items[0]):
+                giou_loss += 0
+            else:
+                giou_loss += loss_items[0]
+
+            if tlx.is_nan(loss_items[1]):
+                conf_loss += 0
+            else:
+                conf_loss += loss_items[1]
+
+            if tlx.is_nan(loss_items[2]):
+                prob_loss += 0
+            else:
+                prob_loss += loss_items[2]
 
         total_loss = giou_loss + conf_loss + prob_loss
         return total_loss

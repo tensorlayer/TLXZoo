@@ -1,9 +1,10 @@
 import tensorlayerx as tlx
 from ..config import BaseDataConfig
 from .task_schema import image_classification_task_data_set_schema, object_detection_task_data_set_schema
-from ..task import BaseForImageClassification, BaseForObjectDetection
+from ..task import *
 from ..utils.registry import Registers
 import numpy as np
+from .dataset import IterableDataset
 
 
 @Registers.data_configs.register
@@ -31,6 +32,7 @@ class ImageClassificationDataConfig(BaseDataConfig):
         super(ImageClassificationDataConfig, self).__init__(**kwargs)
 
 
+@Registers.data_configs.register
 class ImageDetectionDataConfig(BaseDataConfig):
     task = BaseForObjectDetection
     schema = object_detection_task_data_set_schema
@@ -41,13 +43,12 @@ class ImageDetectionDataConfig(BaseDataConfig):
                  data_name="Coco",
                  train_ann_path="",
                  val_ann_path="",
-                 strides=np.array([8, 16, 32]),
-                 anchors=np.array(
-                     [12, 16, 19, 36, 40, 28, 36, 75, 76, 55, 72, 146, 142, 110, 192, 243, 459, 401]).reshape(3, 3, 2),
+                 strides=(8, 16, 32),
+                 anchors=(12, 16, 19, 36, 40, 28, 36, 75, 76, 55, 72, 146, 142, 110, 192, 243, 459, 401),
                  num_classes=80,
                  anchor_per_scale=3,
                  max_bbox_per_scale=150,
-                 train_output_sizes=np.array([52, 26, 13]),
+                 train_output_sizes=(52, 26, 13),
                  train_input_size=416,
                  **kwargs):
         self.per_device_train_batch_size = per_device_train_batch_size
@@ -56,21 +57,36 @@ class ImageDetectionDataConfig(BaseDataConfig):
         self.task_type = self.task.task_type
         self.train_ann_path = train_ann_path
         self.val_ann_path = val_ann_path
-        self.strides = strides
-        self.anchors = anchors
+        self.strides = np.array(strides)
+        self.anchors = np.array(anchors).reshape(3, 3, 2)
         self.num_classes = num_classes
         self.anchor_per_scale = anchor_per_scale
         self.max_bbox_per_scale = max_bbox_per_scale
-        self.train_output_sizes = train_output_sizes
+        self.train_output_sizes = np.array(train_output_sizes)
         self.train_input_size = train_input_size
         super(ImageDetectionDataConfig, self).__init__(**kwargs)
 
+
+class ConditionalGeneration(BaseDataConfig):
+    task = BaseForConditionalGeneration
+    schema = None
+
+    def __init__(self,
+                 per_device_train_batch_size=2,
+                 per_device_eval_batch_size=2,
+                 data_name="WmtEnfr",
+                 **kwargs):
+        self.per_device_train_batch_size = per_device_train_batch_size
+        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.data_name = data_name
+        self.task_type = self.task.task_type
+        super(ConditionalGeneration, self).__init__(**kwargs)
 
 # _configs = {BaseForImageClassification.task_type: ImageClassificationDataConfig}
 
 
 class DataLoaders(object):
-    def __init__(self, config, train_limit=None):
+    def __init__(self, config, train_limit=None, collate_fn=None):
         self.config = config
         self.dataset_dict = Registers.datasets[self.config.data_name].load(train_limit, config=self.config)
 
@@ -78,31 +94,35 @@ class DataLoaders(object):
 
         if "train" in self.dataset_dict:
             train_data = get_schema_dataset_func("train", config)
-            self.train = self.dataset_dataloader(train_data, dataset_type="train", num_workers=config.num_workers)
+            self.train = self.dataset_dataloader(train_data, dataset_type="train", collate_fn=collate_fn,
+                                                 num_workers=config.num_workers)
         else:
             self.train = None
 
         if "eval" in self.dataset_dict:
-            self.eval = self.dataset_dataloader(get_schema_dataset_func("eval", config), dataset_type="eval")
+            self.eval = self.dataset_dataloader(get_schema_dataset_func("eval", config), collate_fn=collate_fn,
+                                                dataset_type="eval")
         else:
             self.eval = None
 
         if "test" in self.dataset_dict:
-            self.test = self.dataset_dataloader(get_schema_dataset_func("test", config), dataset_type="test")
+            self.test = self.dataset_dataloader(get_schema_dataset_func("test", config), collate_fn=collate_fn,
+                                                dataset_type="test")
         else:
             self.test = None
 
-    def register_feature_transform_hook(self, feature_transform_hook):
+    def register_transform_hook(self, transform_hook, index=None):
         get_schema_dataset_func = getattr(self.dataset_dict, f"get_{self.config.task_type}_schema_dataset")
 
         if "train" in self.dataset_dict:
-            get_schema_dataset_func("train").register_feature_transform_hook(feature_transform_hook)
+            train_data = get_schema_dataset_func("train", self.config)
+            train_data.register_transform_hook(transform_hook, index=index)
 
         if "eval" in self.dataset_dict:
-            get_schema_dataset_func("eval").register_feature_transform_hook(feature_transform_hook)
+            get_schema_dataset_func("eval").register_transform_hook(transform_hook, index=index)
 
         if "test" in self.dataset_dict:
-            get_schema_dataset_func("test").register_feature_transform_hook(feature_transform_hook)
+            get_schema_dataset_func("test").register_transform_hook(transform_hook, index=index)
 
     @classmethod
     def from_pretrained(cls, pretrained_path, **kwargs):
@@ -112,14 +132,14 @@ class DataLoaders(object):
                 raise ValueError("pretrained_path and config are both None.")
 
             config_dict = BaseDataConfig.get_config_dict_from_path(pretrained_path)
-            # config = _configs[config_dict.task_type].from_dict(config_dict)
             config = Registers.data_configs[config_dict.config_class].from_dict(config_dict)
 
         return cls(config)
 
-    def dataset_dataloader(self, dataset, dataset_type="train", num_workers=8):
+    def dataset_dataloader(self, dataset, dataset_type="train", num_workers=8, collate_fn=None):
         # validate
-        dataset.validate(self.config.schema)
+        if self.config.schema is not None:
+            dataset.validate(self.config.schema)
 
         # output_types = self.config.schema.get_dtypes()
         # column_names = self.config.schema.get_names()
@@ -128,16 +148,23 @@ class DataLoaders(object):
         # )
 
         if dataset_type == "train":
+            if isinstance(dataset, IterableDataset):
+                shuffle = False
+            else:
+                shuffle = True
             if num_workers == 0:
                 train_loader = tlx.dataflow.DataLoader(dataset,
                                                        batch_size=self.config.per_device_train_batch_size,
-                                                       shuffle=True)
+                                                       collate_fn=collate_fn,
+                                                       shuffle=shuffle)
             else:
                 train_loader = tlx.dataflow.DataLoader(dataset,
                                                        batch_size=self.config.per_device_train_batch_size,
                                                        prefetch_factor=self.config.per_device_train_batch_size,
                                                        num_workers=num_workers,
-                                                       shuffle=True)
+                                                       collate_fn=collate_fn,
+                                                       shuffle=shuffle)
             return train_loader
         else:
-            return tlx.dataflow.DataLoader(dataset, batch_size=self.config.per_device_eval_batch_size, shuffle=False)
+            return tlx.dataflow.DataLoader(dataset, collate_fn=collate_fn,
+                                           batch_size=self.config.per_device_eval_batch_size, shuffle=False)
