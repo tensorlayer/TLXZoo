@@ -12,12 +12,13 @@ class BaseDataSetMixin:
     def register_transform_hook(self, transform_hook, index=None):
         if index is None:
             self.transforms.append(transform_hook)
-        if not isinstance(index, int):
-            raise ValueError("{index} is not int.")
-        self.transforms.insert(index, transform_hook)
+        else:
+            if not isinstance(index, int):
+                raise ValueError(f"{index} is not int.")
+            self.transforms.insert(index, transform_hook)
 
     def transform(self, data, label):
-        for transform in self.feature_transforms:
+        for transform in self.transforms:
             data, label = transform(data, label)
         return data, label
 
@@ -50,9 +51,10 @@ class BaseDataSet(Dataset, BaseDataSetMixin):
 
 
 class FileDataSet(IterableDataset, BaseDataSetMixin):
-    def __init__(self, data, label, transforms=None):
+    def __init__(self, data, label, transforms=None, limit=None):
         self.data = data
         self.label = label
+        self.limit = limit
         if transforms is not None:
             self.transforms = transforms
         else:
@@ -60,8 +62,11 @@ class FileDataSet(IterableDataset, BaseDataSetMixin):
         super(FileDataSet, self).__init__()
 
     def __iter__(self):
-
+        index = 0
         for data, label in zip(open(self.data), open(self.label)):
+            if self.limit and index >= self.limit:
+                break
+            index += 1
             data = data.strip()
             label = label.strip()
             data, label = self.transform(data, label)
@@ -160,6 +165,22 @@ class WmtEnfrDataSetDict(BaseDataSetDict):
 
         return cls({"train": FileDataSet(train_path + ".en", train_path + ".fr"),
                     "test": FileDataSet(dev_path + ".en", dev_path + ".fr")})
+
+    def get_conditional_generation_schema_dataset(self, dataset_type, config=None):
+        if dataset_type == "train":
+            dataset = self["train"]
+        else:
+            dataset = self["test"]
+
+        return dataset
+
+
+@Registers.datasets.register("Text2Text")
+class Text2TextDataSetDict(BaseDataSetDict):
+    @classmethod
+    def load(cls, train_limit=None, config=None):
+        return cls({"train": FileDataSet(config.source_train_path, config.target_train_path, limit=train_limit),
+                    "test": FileDataSet(config.source_dev_path, config.target_dev_path)})
 
     def get_conditional_generation_schema_dataset(self, dataset_type, config=None):
         if dataset_type == "train":

@@ -6,6 +6,7 @@ import re
 import numpy as np
 
 
+@Registers.feature_configs.register
 class T5FeatureConfig(BaseTextFeatureConfig):
     def __init__(self,
                  vocab_file=None,
@@ -13,15 +14,18 @@ class T5FeatureConfig(BaseTextFeatureConfig):
                  unk_token="<unk>",
                  pad_token="<pad>",
                  extra_ids=100,
-                 max_length=512,
+                 prefix="translate English to French: ",
+                 source_max_length=512,
+                 label_max_length=512,
                  **kwargs):
-
         self.vocab_file = vocab_file
         self.eos_token = eos_token
         self.unk_token = unk_token
         self.pad_token = pad_token
         self.extra_ids = extra_ids
-        self.max_length = max_length
+        self.source_max_length = source_max_length
+        self.prefix = prefix
+        self.label_max_length = label_max_length
         super(T5FeatureConfig, self).__init__(**kwargs)
 
 
@@ -124,14 +128,39 @@ class T5Feature(BaseTextFeature):
             return self.vocab_size - num - 1
         return self.sp_model.piece_to_id(token)
 
-    def __call__(self, text, max_length=None):
-        if max_length is None:
-            max_length = self.config.max_length
+    def _convert_id_to_token(self, index):
+        """Converts an index (integer) in a token (str) using the vocab."""
+        if index < self.sp_model.get_piece_size():
+            token = self.sp_model.IdToPiece(index)
+        else:
+            token = f"<extra_id_{self.vocab_size - 1 - index}>"
+        return token
+
+    def convert_tokens_to_string(self, tokens, remove_special_token=False):
+        """Converts a sequence of tokens (string) in a single string."""
+        current_sub_tokens = []
+        out_string = ""
+        for token in tokens:
+            # make sure that special tokens are not decoded using sentencepiece model
+            if token in self.additional_special_tokens:
+                if not remove_special_token:
+                    out_string += self.sp_model.decode_pieces(current_sub_tokens) + token + " "
+                    current_sub_tokens = []
+            else:
+                current_sub_tokens.append(token)
+        out_string += self.sp_model.decode_pieces(current_sub_tokens)
+        return out_string.strip()
+
+    def ids_to_string(self, ids, remove_special_token=True):
+        tokens = [self._convert_id_to_token(int(index)) for index in ids if index >= 0]
+        return self.convert_tokens_to_string(tokens, remove_special_token=remove_special_token)
+
+    def string_to_ids(self, text, max_length=None):
         if isinstance(text, list):
             input_ids = []
             attention_masks = []
             for i in text:
-                input_id, attention_mask = self.__call__(i, max_length=max_length)
+                input_id, attention_mask = self.string_to_ids(i, max_length=max_length)
                 input_ids.append(input_id)
                 attention_masks.append(attention_mask)
             return {"inputs": np.array(input_ids), "attention_mask": np.array(attention_masks)}
@@ -150,8 +179,21 @@ class T5Feature(BaseTextFeature):
                     attention_mask = [1] * len(tokens)
                 else:
                     attention_mask = [1] * (len(tokens) + 1) + [0] * (max_length - tokens_length - 1)
-                    tokens = tokens + [self.config.eos_token] + [self.config.pad_token] * (max_length - tokens_length - 1)
+                    tokens = tokens + [self.config.eos_token] + [self.config.pad_token] * (
+                                max_length - tokens_length - 1)
 
         ids = self.convert_tokens_to_ids(tokens)
         return {"inputs": np.array(ids), "attention_mask": np.array(attention_mask)}
 
+    def __call__(self, text, label, source_max_length=None, label_max_length=None):
+        if self.config.prefix:
+            text = self.config.prefix + text
+        inputs = self.string_to_ids(text,
+                                    max_length=source_max_length if source_max_length else self.config.source_max_length)
+
+        labels = self.string_to_ids(label,
+                                    max_length=label_max_length if label_max_length else self.config.label_max_length)
+        labels = np.where(labels["attention_mask"], labels["inputs"], -100)
+        labels = {"labels": labels}
+        inputs.update(labels)
+        return inputs, labels

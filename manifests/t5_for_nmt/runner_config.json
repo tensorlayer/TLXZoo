@@ -1,0 +1,10 @@
+{
+    "backend": "tensorflow",
+    "config_type": "runner",
+    "config_class": "BaseRunnerConfig",
+    "data_config_path": "data_config.json",
+    "feature_config_path": "feature_config.json",
+    "task_config_path": "task_config.json",
+    "trainer_config_path": "trainer_config.json",
+    "infer_config_path": "infer_config.json"
+}

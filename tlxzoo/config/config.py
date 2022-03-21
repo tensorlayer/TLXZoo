@@ -78,6 +78,7 @@ class BaseConfig(object):
             return cls._from_dict(config_dict)
 
         if "config_class" in config_dict:
+            print(cls.config_type, config_dict["config_class"])
             return _config_type_register[cls.config_type][config_dict["config_class"]]._from_dict(config_dict)
 
         return cls._from_dict(config_dict)

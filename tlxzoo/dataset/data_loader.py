@@ -67,6 +67,7 @@ class ImageDetectionDataConfig(BaseDataConfig):
         super(ImageDetectionDataConfig, self).__init__(**kwargs)
 
 
+@Registers.data_configs.register
 class ConditionalGeneration(BaseDataConfig):
     task = BaseForConditionalGeneration
     schema = None

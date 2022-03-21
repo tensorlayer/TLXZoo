@@ -3,8 +3,13 @@ from .t5 import T5Model
 from ...utils.registry import Registers
 from .config_t5 import T5ForConditionalGenerationTaskConfig
 import tensorlayerx as tlx
-from ...utils.output import BaseTaskOutput
+from ...utils.output import BaseTaskOutput, dataclass, Optional, float_tensor
 from .modeling import shape_list
+
+
+@dataclass
+class T5ForConditionalGenerationOutput(BaseTaskOutput):
+    encoder_outputs: Optional[tuple] = None
 
 
 @Registers.tasks.register
@@ -25,7 +30,7 @@ class T5ForConditionalGeneration(BaseForConditionalGeneration):
         if not config.tie_word_embeddings:
             lm_head_initializer = tlx.initializers.RandomNormal(mean=0, stddev=config.initializer_factor)
             self.lm_head = tlx.layers.Dense(
-                config.vocab_size, b_init=None, name="lm_head", W_init=lm_head_initializer
+                config.model_config.vocab_size, b_init=None, name="lm_head", W_init=lm_head_initializer
             )
 
     def _load_huggingface_tf_weight(self, weight_path):
@@ -52,7 +57,7 @@ class T5ForConditionalGeneration(BaseForConditionalGeneration):
         pad_token_id = self.config.model_config.pad_token_id
 
         assert (
-            decoder_start_token_id is not None
+                decoder_start_token_id is not None
         ), "self.model.config.decoder_start_token_id has to be defined. " \
            "In TF T5 it is usually set to the pad_token_id. See T5 docs for more information"
 
@@ -76,10 +81,46 @@ class T5ForConditionalGeneration(BaseForConditionalGeneration):
         loss = tlx.losses.cross_entropy_seq_with_mask
 
         mask = tlx.not_equal(labels, -100)
+        logits = tlx.reshape(logits, shape=(-1, self.config.model_config.vocab_size))
+        labels = tlx.where(mask, labels, 0)
         return loss(logits=logits, target_seqs=labels, input_mask=mask)
+
+    def generate(self, inputs=None,
+                 attention_mask=None):
+        ...
+
+    def generate_one(self, inputs=None,
+                     attention_mask=None):
+        decoder_start_token_id = self.config.model_config.decoder_start_token_id
+        start_tokens = decoder_start_token_id * tlx.ones((shape_list(inputs)[0], 1))
+        start_tokens = tlx.cast(start_tokens, inputs.dtype)
+
+        max_length = 512
+        encoder_outputs = self.t5.encoder(
+            inputs,
+            attention_mask=attention_mask,
+            encoder_hidden_states=None,
+            encoder_attention_mask=None,
+            inputs_embeds=None,
+            head_mask=None,
+            past_key_values=None,
+            use_cache=False,
+            output_attentions=None,
+            output_hidden_states=None,
+        )
+
+        while int(start_tokens[0][-1]) != self.config.model_config.eos_token_id and \
+                start_tokens.shape[1] < max_length:
+            output = self.forward(inputs=inputs, attention_mask=attention_mask, decoder_input_ids=start_tokens,
+                                  encoder_outputs=encoder_outputs)
+            logits = output.logits
+            last_tokens = tlx.argmax(logits, -1)[:, -1:]
+            start_tokens = tlx.concat([start_tokens, last_tokens], axis=-1)
+        return start_tokens
 
     def forward(self, inputs=None,
                 attention_mask=None,
+                labels=None,
                 decoder_input_ids=None,
                 decoder_attention_mask=None,
                 head_mask=None,
@@ -88,7 +129,6 @@ class T5ForConditionalGeneration(BaseForConditionalGeneration):
                 past_key_values=None,
                 inputs_embeds=None,
                 decoder_inputs_embeds=None,
-                labels=None,
                 use_cache=None,
                 output_attentions=None,
                 output_hidden_states=None,
@@ -96,9 +136,9 @@ class T5ForConditionalGeneration(BaseForConditionalGeneration):
                 **kwargs):
 
         if (
-            labels is not None
-            and decoder_input_ids is None
-            and decoder_inputs_embeds is None
+                labels is not None
+                and decoder_input_ids is None
+                and decoder_inputs_embeds is None
         ):
             # get decoder inputs from shifting lm labels to the right
             decoder_input_ids = self._shift_right(labels)
