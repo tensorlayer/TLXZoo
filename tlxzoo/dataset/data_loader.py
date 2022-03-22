@@ -83,6 +83,40 @@ class ConditionalGeneration(BaseDataConfig):
         self.task_type = self.task.task_type
         super(ConditionalGeneration, self).__init__(**kwargs)
 
+
+@Registers.data_configs.register
+class TextClassificationDataConfig(BaseDataConfig):
+    task = BaseForTextClassification
+    schema = None
+
+    def __init__(self,
+                 per_device_train_batch_size=2,
+                 per_device_eval_batch_size=2,
+                 data_name="SST-2",
+                 **kwargs):
+        self.per_device_train_batch_size = per_device_train_batch_size
+        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.data_name = data_name
+        self.task_type = self.task.task_type
+        super(TextClassificationDataConfig, self).__init__(**kwargs)
+
+
+@Registers.data_configs.register
+class PairTextClassificationDataConfig(BaseDataConfig):
+    task = BaseForPairTextClassification
+    schema = None
+
+    def __init__(self,
+                 per_device_train_batch_size=2,
+                 per_device_eval_batch_size=2,
+                 data_name="QQP",
+                 **kwargs):
+        self.per_device_train_batch_size = per_device_train_batch_size
+        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.data_name = data_name
+        self.task_type = self.task.task_type
+        super(PairTextClassificationDataConfig, self).__init__(**kwargs)
+
 # _configs = {BaseForImageClassification.task_type: ImageClassificationDataConfig}
 
 

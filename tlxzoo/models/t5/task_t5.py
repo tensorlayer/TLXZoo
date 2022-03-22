@@ -1,7 +1,9 @@
-from ...task.task import BaseForConditionalGeneration
-from .t5 import T5Model
+from ...task.task import BaseForConditionalGeneration, BaseForTextClassification, \
+    BaseForPairTextClassification, BaseForTokenClassification
+from .t5 import T5Model, T5EncoderModel, load_huggingface_tf_weight
 from ...utils.registry import Registers
-from .config_t5 import T5ForConditionalGenerationTaskConfig
+from .config_t5 import T5ForConditionalGenerationTaskConfig, T5ForTextClassificationTaskConfig, \
+    T5ForPairTextClassificationTaskConfig, T5ForTokenClassificationTaskConfig
 import tensorlayerx as tlx
 from ...utils.output import BaseTaskOutput, dataclass, Optional, float_tensor
 from .modeling import shape_list
@@ -34,23 +36,7 @@ class T5ForConditionalGeneration(BaseForConditionalGeneration):
             )
 
     def _load_huggingface_tf_weight(self, weight_path):
-        import h5py
-        file = h5py.File(weight_path, "r")
-
-        for w in self.all_weights:
-            name = w.name.split("/", 1)[1]
-            coder = name.split("/")[0]
-            huggingface_weight_name = f"{coder}/tf_t5with_lm_head_model/" + name
-            huggingface_weight_name = huggingface_weight_name.replace("shared/embeddings", "shared/weight")
-            huggingface_weight_name = huggingface_weight_name.replace("q/weights", "q/kernel")
-            huggingface_weight_name = huggingface_weight_name.replace("k/weights", "k/kernel")
-            huggingface_weight_name = huggingface_weight_name.replace("v/weights", "v/kernel")
-            huggingface_weight_name = huggingface_weight_name.replace("o/weights", "o/kernel")
-            huggingface_weight_name = huggingface_weight_name.replace("wi/weights", "wi/kernel")
-            huggingface_weight_name = huggingface_weight_name.replace("wo/weights", "wo/kernel")
-            w.assign(file[huggingface_weight_name])
-
-        return self
+        return load_huggingface_tf_weight(self, weight_path)
 
     def _shift_right(self, input_ids):
         decoder_start_token_id = self.config.model_config.decoder_start_token_id
@@ -161,5 +147,154 @@ class T5ForConditionalGeneration(BaseForConditionalGeneration):
             logits = self.lm_head(sequence_output)
 
         logits = tlx.cast(logits, tlx.float32)
+
+        return BaseTaskOutput(logits=logits)
+
+
+@Registers.tasks.register
+class T5ForTextClassification(BaseForTextClassification):
+    config_class = T5ForTextClassificationTaskConfig
+
+    def __init__(self, config: T5ForTextClassificationTaskConfig = None, model=None, **kwargs):
+        if config is None:
+            config = self.config_class(**kwargs)
+        self.model_dim = config.model_config.d_model
+        super(T5ForTextClassification, self).__init__(config)
+
+        if model is not None:
+            self.t5_encoder = model
+        else:
+            self.t5_encoder = T5EncoderModel(self.config.model_config)
+
+        initializer = tlx.initializers.RandomNormal(mean=0, stddev=config.initializer_factor)
+        self.classifier = tlx.layers.Dense(
+            n_units=self.config.n_class, in_channels=self.model_dim, W_init=initializer
+        )
+
+    def _load_huggingface_tf_weight(self, weight_path):
+        return load_huggingface_tf_weight(self, weight_path)
+
+    def loss_fn(self, logits, labels):
+        loss = tlx.losses.softmax_cross_entropy_with_logits(logits, labels)
+        return loss
+
+    def forward(self, inputs=None,
+                attention_mask=None,
+                labels=None,
+                head_mask=None,
+                inputs_embeds=None,
+                output_attentions=None,
+                output_hidden_states=None,
+                **kwargs):
+
+        hidden_states = self.t5_encoder(inputs=inputs, attention_mask=attention_mask, head_mask=head_mask,
+                                        inputs_embeds=inputs_embeds, output_attentions=output_attentions,
+                                        output_hidden_states=output_hidden_states, **kwargs)
+
+        hidden_state = tlx.reduce_mean(hidden_states, axis=1)
+        logits = self.classifier(hidden_state)
+
+        return BaseTaskOutput(logits=logits)
+
+
+@Registers.tasks.register
+class T5ForPairTextClassification(BaseForPairTextClassification):
+    config_class = T5ForPairTextClassificationTaskConfig
+
+    def __init__(self, config: T5ForPairTextClassificationTaskConfig = None, model=None, **kwargs):
+        if config is None:
+            config = self.config_class(**kwargs)
+        self.model_dim = config.model_config.d_model
+        super(T5ForPairTextClassification, self).__init__(config)
+
+        if model is not None:
+            self.t5_encoder = model
+        else:
+            self.t5_encoder = T5EncoderModel(self.config.model_config)
+
+        initializer = tlx.initializers.RandomNormal(mean=0, stddev=config.initializer_factor)
+        self.classifier = tlx.layers.Dense(
+            n_units=self.config.n_class, in_channels=self.model_dim, W_init=initializer
+        )
+
+    def _load_huggingface_tf_weight(self, weight_path):
+        return load_huggingface_tf_weight(self, weight_path)
+
+    def loss_fn(self, logits, labels):
+        loss = tlx.losses.softmax_cross_entropy_with_logits(logits, labels)
+        return loss
+
+    def forward(self, inputs=None,
+                attention_mask=None,
+                inputs_embeds=None,
+                next_inputs=None,
+                next_attention_mask=None,
+                next_inputs_embeds=None,
+                labels=None,
+                head_mask=None,
+                output_attentions=None,
+                output_hidden_states=None,
+                **kwargs):
+
+        if inputs is not None:
+            inputs = tlx.concat([inputs, next_inputs], axis=1)
+
+        if attention_mask is None:
+            attention_mask = tlx.concat([attention_mask, next_attention_mask], axis=1)
+
+        if inputs_embeds is None:
+            inputs_embeds = tlx.concat([inputs_embeds, next_inputs_embeds], axis=1)
+
+        hidden_states = self.t5_encoder(inputs=inputs, attention_mask=attention_mask, head_mask=head_mask,
+                                        inputs_embeds=inputs_embeds, output_attentions=output_attentions,
+                                        output_hidden_states=output_hidden_states, **kwargs)
+
+        hidden_state = tlx.reduce_mean(hidden_states, axis=1)
+        logits = self.classifier(hidden_state)
+
+        return BaseTaskOutput(logits=logits)
+
+
+@Registers.tasks.register
+class T5ForTokenClassification(BaseForTokenClassification):
+    config_class = T5ForTokenClassificationTaskConfig
+
+    def __init__(self, config: T5ForTokenClassificationTaskConfig = None, model=None, **kwargs):
+        if config is None:
+            config = self.config_class(**kwargs)
+        self.model_dim = config.model_config.d_model
+        super(T5ForTokenClassification, self).__init__(config)
+
+        if model is not None:
+            self.t5_encoder = model
+        else:
+            self.t5_encoder = T5EncoderModel(self.config.model_config)
+
+        initializer = tlx.initializers.RandomNormal(mean=0, stddev=config.initializer_factor)
+        self.classifier = tlx.layers.Dense(
+            n_units=self.config.n_class, in_channels=self.model_dim, W_init=initializer
+        )
+
+    def _load_huggingface_tf_weight(self, weight_path):
+        return load_huggingface_tf_weight(self, weight_path)
+
+    def loss_fn(self, logits, labels):
+        loss = tlx.losses.softmax_cross_entropy_with_logits(logits, labels)
+        return loss
+
+    def forward(self, inputs=None,
+                attention_mask=None,
+                labels=None,
+                head_mask=None,
+                inputs_embeds=None,
+                output_attentions=None,
+                output_hidden_states=None,
+                **kwargs):
+
+        hidden_states = self.t5_encoder(inputs=inputs, attention_mask=attention_mask, head_mask=head_mask,
+                                        inputs_embeds=inputs_embeds, output_attentions=output_attentions,
+                                        output_hidden_states=output_hidden_states, **kwargs)
+
+        logits = self.classifier(hidden_states)
 
         return BaseTaskOutput(logits=logits)

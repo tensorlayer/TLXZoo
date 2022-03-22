@@ -49,3 +49,17 @@ class BaseForObjectDetection(BaseTask):
 class BaseForConditionalGeneration(BaseTask):
     task_type = "conditional_generation"
 
+
+@Registers.tasks.register
+class BaseForTextClassification(BaseTask):
+    task_type = "text_classification"
+
+
+@Registers.tasks.register
+class BaseForPairTextClassification(BaseTask):
+    task_type = "pair_text_classification"
+
+
+@Registers.tasks.register
+class BaseForTokenClassification(BaseTask):
+    task_type = "token_classification"

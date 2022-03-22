@@ -1,0 +1,10 @@
+{
+    "per_device_train_batch_size": 24,
+    "per_device_eval_batch_size": 24,
+    "data_name": "SST-2",
+    "task_type": "text_classification",
+    "num_workers": 8,
+    "path": "./data",
+    "config_type": "data",
+    "config_class": "TextClassificationDataConfig"
+}

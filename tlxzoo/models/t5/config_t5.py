@@ -73,3 +73,75 @@ class T5ForConditionalGenerationTaskConfig(BaseTaskConfig):
         else:
             self.weights_path = weights_path
         super(T5ForConditionalGenerationTaskConfig, self).__init__(model_config, **kwargs)
+
+
+@Registers.task_configs.register
+class T5ForTextClassificationTaskConfig(BaseTaskConfig):
+    task_type = "t5_for_text_classification"
+    model_config_type = T5Config
+
+    def __init__(self,
+                 model_config: model_config_type = None,
+                 weights_path=TASK_WEIGHT_NAME,
+                 n_class=2,
+                 initializer_factor=1.0,
+                 **kwargs):
+
+        if model_config is None:
+            model_config = self.model_config_type()
+
+        self.n_class = n_class
+        self.initializer_factor = initializer_factor
+        if weights_path is None:
+            self.weights_path = model_config.weights_path
+        else:
+            self.weights_path = weights_path
+        super(T5ForTextClassificationTaskConfig, self).__init__(model_config, **kwargs)
+
+
+@Registers.task_configs.register
+class T5ForPairTextClassificationTaskConfig(BaseTaskConfig):
+    task_type = "t5_for_text_classification"
+    model_config_type = T5Config
+
+    def __init__(self,
+                 model_config: model_config_type = None,
+                 weights_path=TASK_WEIGHT_NAME,
+                 n_class=2,
+                 initializer_factor=1.0,
+                 **kwargs):
+
+        if model_config is None:
+            model_config = self.model_config_type()
+
+        self.n_class = n_class
+        self.initializer_factor = initializer_factor
+        if weights_path is None:
+            self.weights_path = model_config.weights_path
+        else:
+            self.weights_path = weights_path
+        super(T5ForPairTextClassificationTaskConfig, self).__init__(model_config, **kwargs)
+
+
+@Registers.task_configs.register
+class T5ForTokenClassificationTaskConfig(BaseTaskConfig):
+    task_type = "t5_for_text_classification"
+    model_config_type = T5Config
+
+    def __init__(self,
+                 model_config: model_config_type = None,
+                 weights_path=TASK_WEIGHT_NAME,
+                 initializer_factor=1.0,
+                 n_class=15,
+                 **kwargs):
+
+        if model_config is None:
+            model_config = self.model_config_type()
+
+        self.n_class = n_class
+        self.initializer_factor = initializer_factor
+        if weights_path is None:
+            self.weights_path = model_config.weights_path
+        else:
+            self.weights_path = weights_path
+        super(T5ForTokenClassificationTaskConfig, self).__init__(model_config, **kwargs)

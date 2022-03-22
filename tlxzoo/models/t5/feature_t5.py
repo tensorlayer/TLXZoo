@@ -15,6 +15,7 @@ class T5FeatureConfig(BaseTextFeatureConfig):
                  pad_token="<pad>",
                  extra_ids=100,
                  prefix="translate English to French: ",
+                 next_prefix=None,
                  source_max_length=512,
                  label_max_length=512,
                  **kwargs):
@@ -25,6 +26,7 @@ class T5FeatureConfig(BaseTextFeatureConfig):
         self.extra_ids = extra_ids
         self.source_max_length = source_max_length
         self.prefix = prefix
+        self.next_prefix = next_prefix
         self.label_max_length = label_max_length
         super(T5FeatureConfig, self).__init__(**kwargs)
 
@@ -180,20 +182,41 @@ class T5Feature(BaseTextFeature):
                 else:
                     attention_mask = [1] * (len(tokens) + 1) + [0] * (max_length - tokens_length - 1)
                     tokens = tokens + [self.config.eos_token] + [self.config.pad_token] * (
-                                max_length - tokens_length - 1)
+                            max_length - tokens_length - 1)
 
         ids = self.convert_tokens_to_ids(tokens)
         return {"inputs": np.array(ids), "attention_mask": np.array(attention_mask)}
 
     def __call__(self, text, label, source_max_length=None, label_max_length=None):
-        if self.config.prefix:
-            text = self.config.prefix + text
-        inputs = self.string_to_ids(text,
-                                    max_length=source_max_length if source_max_length else self.config.source_max_length)
+        if isinstance(text, str):
+            if self.config.prefix:
+                text = self.config.prefix + text
+            inputs = self.string_to_ids(text,
+                                        max_length=source_max_length if source_max_length else self.config.source_max_length)
+        elif (isinstance(text, tuple) or isinstance(text, list)) and len(text) == 2:
+            first_text = text[0]
+            if self.config.prefix:
+                first_text = self.config.prefix + first_text
+            first_inputs = self.string_to_ids(first_text,
+                                              max_length=source_max_length if source_max_length else self.config.source_max_length)
 
-        labels = self.string_to_ids(label,
-                                    max_length=label_max_length if label_max_length else self.config.label_max_length)
-        labels = np.where(labels["attention_mask"], labels["inputs"], -100)
+            second_text = text[1]
+            if self.config.next_prefix:
+                second_text = self.config.next_prefix + second_text
+            second_inputs = self.string_to_ids(second_text,
+                                               max_length=source_max_length if source_max_length else self.config.source_max_length)
+            inputs = {"inputs": np.concatenate([first_inputs["inputs"], second_inputs["inputs"]]),
+                      "attention_mask": np.concatenate(
+                          [first_inputs["attention_mask"], second_inputs["attention_mask"]])}
+        else:
+            raise ValueError(f"{text} is wrong.")
+
+        if isinstance(label, str):
+            labels = self.string_to_ids(label,
+                                        max_length=label_max_length if label_max_length else self.config.label_max_length)
+            labels = np.where(labels["attention_mask"], labels["inputs"], -100)
+        else:
+            labels = label
         labels = {"labels": labels}
         inputs.update(labels)
         return inputs, labels
