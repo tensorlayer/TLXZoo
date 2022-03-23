@@ -1,17 +1,17 @@
-from tlxzoo.dataset import DataLoaders, TextClassificationDataConfig
+from tlxzoo.dataset import DataLoaders, PairTextClassificationDataConfig
 import tensorlayerx as tlx
 import time
 import tensorflow as tf
 from tlxzoo.models.t5.feature_t5 import T5FeatureConfig, T5Feature
 
-t5_feat_config = T5FeatureConfig(vocab_file="./spiece.model", prefix="ss2 sentence: ", source_max_length=256,
-                                 label_max_length=256)
+t5_feat_config = T5FeatureConfig(vocab_file="./spiece.model", prefix="qqp question1: ", next_prefix="question2: ",
+                                 source_max_length=64, label_max_length=64)
 t5_feat = T5Feature(t5_feat_config)
 
-data_config = TextClassificationDataConfig(per_device_train_batch_size=12,
-                                           per_device_eval_batch_size=12,
-                                           path="./data",
-                                           num_workers=8)
+data_config = PairTextClassificationDataConfig(per_device_train_batch_size=24,
+                                               per_device_eval_batch_size=24,
+                                               path="./data",
+                                               num_workers=8)
 data_loaders = DataLoaders(data_config)
 data_loaders.register_transform_hook(t5_feat)
 
@@ -91,5 +91,5 @@ class Trainer(tlx.model.Model):
 
 
 model = Trainer(network=t5, loss_fn=loss_fn, optimizer=optimizer, metrics=metric)
-model.train(n_epoch=3, train_dataset=data_loaders.train, test_dataset=data_loaders.test, print_freq=1,
+model.train(n_epoch=8, train_dataset=data_loaders.train, test_dataset=data_loaders.test, print_freq=1,
             print_train_batch=False)
