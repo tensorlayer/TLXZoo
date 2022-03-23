@@ -18,7 +18,7 @@ data_loaders.register_transform_hook(t5_feat)
 from tlxzoo.models.t5 import *
 
 t5_model_config = T5Config()
-t5_task_config = T5ForTextClassificationTaskConfig(t5_model_config)
+t5_task_config = T5ForPairTextClassificationTaskConfig(t5_model_config)
 
 t5 = T5ForTextClassification.from_pretrained(config=t5_task_config,
                                              pretrained_base_path="./tf_model.h5",

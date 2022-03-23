@@ -1,0 +1,15 @@
+{
+    "vocab_file": "./spiece.model",
+    "eos_token": "</s>",
+    "unk_token": "<unk>",
+    "pad_token": "<pad>",
+    "extra_ids": 100,
+    "source_max_length": 256,
+    "prefix": "",
+    "task": "token",
+    "next_prefix": null,
+    "label_max_length": 256,
+    "feature_class": "T5Feature",
+    "config_type": "feature",
+    "config_class": "T5FeatureConfig"
+}

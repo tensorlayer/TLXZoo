@@ -1,0 +1,10 @@
+{
+    "per_device_train_batch_size": 12,
+    "per_device_eval_batch_size": 12,
+    "data_name": "Conll2003",
+    "task_type": "token_classification",
+    "num_workers": 8,
+    "path": "./data",
+    "config_type": "data",
+    "config_class": "TokenClassificationDataConfig"
+}
