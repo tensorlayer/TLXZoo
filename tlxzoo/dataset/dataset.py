@@ -119,8 +119,8 @@ class MnistDataSetDict(BaseDataSetDict):
                                               random_flip_horizontal_prop=config.random_flip_horizontal_prop,
                                               random_crop_size=config.random_crop_size)
                 dataset.register_transform_hook(data_random_hook, index=-1)
-        elif dataset_type == "eval":
-            dataset = self["eval"]
+        elif dataset_type == "val":
+            dataset = self["val"]
         else:
             dataset = self["test"]
 

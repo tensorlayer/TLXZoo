@@ -279,8 +279,12 @@ class T5ForTokenClassification(BaseForTokenClassification):
         return load_huggingface_tf_weight(self, weight_path)
 
     def loss_fn(self, logits, labels):
-        loss = tlx.losses.softmax_cross_entropy_with_logits(logits, labels)
-        return loss
+        loss = tlx.losses.cross_entropy_seq_with_mask
+
+        mask = tlx.not_equal(labels, -100)
+        logits = tlx.reshape(logits, shape=(-1, self.config.n_class))
+        labels = tlx.where(mask, labels, 0)
+        return loss(logits=logits, target_seqs=labels, input_mask=mask)
 
     def forward(self, inputs=None,
                 attention_mask=None,

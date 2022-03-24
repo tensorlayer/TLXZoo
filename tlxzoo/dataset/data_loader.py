@@ -117,6 +117,23 @@ class PairTextClassificationDataConfig(BaseDataConfig):
         self.task_type = self.task.task_type
         super(PairTextClassificationDataConfig, self).__init__(**kwargs)
 
+
+@Registers.data_configs.register
+class TokenClassificationDataConfig(BaseDataConfig):
+    task = BaseForTokenClassification
+    schema = None
+
+    def __init__(self,
+                 per_device_train_batch_size=2,
+                 per_device_eval_batch_size=2,
+                 data_name="Conll2003",
+                 **kwargs):
+        self.per_device_train_batch_size = per_device_train_batch_size
+        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.data_name = data_name
+        self.task_type = self.task.task_type
+        super(TokenClassificationDataConfig, self).__init__(**kwargs)
+
 # _configs = {BaseForImageClassification.task_type: ImageClassificationDataConfig}
 
 

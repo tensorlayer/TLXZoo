@@ -16,6 +16,7 @@ class T5FeatureConfig(BaseTextFeatureConfig):
                  extra_ids=100,
                  prefix="translate English to French: ",
                  next_prefix=None,
+                 task="text",
                  source_max_length=512,
                  label_max_length=512,
                  **kwargs):
@@ -26,6 +27,7 @@ class T5FeatureConfig(BaseTextFeatureConfig):
         self.extra_ids = extra_ids
         self.source_max_length = source_max_length
         self.prefix = prefix
+        self.task = task
         self.next_prefix = next_prefix
         self.label_max_length = label_max_length
         super(T5FeatureConfig, self).__init__(**kwargs)
@@ -187,7 +189,41 @@ class T5Feature(BaseTextFeature):
         ids = self.convert_tokens_to_ids(tokens)
         return {"inputs": np.array(ids), "attention_mask": np.array(attention_mask)}
 
+    def process_token(self, text, label, source_max_length=None):
+        ids = []
+        labels = []
+        for token, l in zip(text, label):
+            token = self.tokenize(token)
+            id = self.convert_tokens_to_ids(token)
+            l = [l] * len(id)
+            ids += id
+            labels += l
+
+        if source_max_length is None:
+            ids = ids + self.convert_tokens_to_ids([self.config.eos_token])
+            attention_mask = [1] * len(ids)
+            labels = labels + [-100]
+        else:
+            if not isinstance(source_max_length, int):
+                raise ValueError(f"{source_max_length} is not int.")
+            else:
+                ids_length = len(ids)
+                if ids_length >= (source_max_length - 1):
+                    ids = ids[:source_max_length - 1] + self.convert_tokens_to_ids([self.config.eos_token])
+                    attention_mask = [1] * len(ids)
+                    labels = labels[:source_max_length - 1] + [-100]
+                else:
+                    attention_mask = [1] * (len(ids) + 1) + [0] * (source_max_length - ids_length - 1)
+                    ids = ids + self.convert_tokens_to_ids([self.config.eos_token]) + self.convert_tokens_to_ids(
+                        [self.config.pad_token]) * (source_max_length - ids_length - 1)
+                    labels = labels + [-100] * (source_max_length - ids_length)
+        return {"inputs": np.array(ids), "attention_mask": np.array(attention_mask), "labels": np.array(labels)}, \
+               {"labels": np.array(labels)}
+
     def __call__(self, text, label, source_max_length=None, label_max_length=None):
+        if self.config.task == "token":
+            return self.process_token(text, label,
+                                      source_max_length if source_max_length else self.config.source_max_length)
         if isinstance(text, str):
             if self.config.prefix:
                 text = self.config.prefix + text

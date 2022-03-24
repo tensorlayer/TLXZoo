@@ -132,7 +132,7 @@ class T5ForTokenClassificationTaskConfig(BaseTaskConfig):
                  model_config: model_config_type = None,
                  weights_path=TASK_WEIGHT_NAME,
                  initializer_factor=1.0,
-                 n_class=15,
+                 n_class=9,
                  **kwargs):
 
         if model_config is None:
