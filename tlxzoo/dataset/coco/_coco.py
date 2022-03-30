@@ -1,8 +1,8 @@
 import tensorlayerx as tlx
 import numpy as np
 import cv2
-from ..utils.registry import Registers
-from .dataset import BaseDataSetDict, BaseDataSet
+from ...utils.registry import Registers
+from ..dataset import BaseDataSetDict, BaseDataSet
 import random
 
 
