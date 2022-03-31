@@ -83,7 +83,7 @@ class YOLOv4ModelConfig(BaseModelConfig):
 
 @Registers.task_configs.register
 class YOLOv4ForObjectDetectionTaskConfig(BaseTaskConfig):
-    task_type = "vgg_for_object_detection"
+    task_type = "yolov4_for_object_detection"
     model_config_type = YOLOv4ModelConfig
 
     def __init__(self,

@@ -1,0 +1,12 @@
+{
+    "per_device_train_batch_size": 1,
+    "per_device_eval_batch_size": 1,
+    "data_name": "Coco",
+    "task_type": "object_detection",
+    "root_path": "",
+    "train_ann_path": "./annotations/instances_train2017.json",
+    "val_ann_path": "./annotations/instances_val2017.json",
+    "num_workers": 0,
+    "config_type": "data",
+    "config_class": "ImageDetectionDataConfig"
+}

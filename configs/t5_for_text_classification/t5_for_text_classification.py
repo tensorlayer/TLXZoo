@@ -19,7 +19,9 @@ from tlxzoo.models.t5 import *
 
 t5_model_config = T5Config()
 t5_task_config = T5ForTextClassificationTaskConfig(t5_model_config)
-
+"""
+download weight from https://huggingface.co/t5-base/tree/main
+"""
 t5 = T5ForTextClassification.from_pretrained(config=t5_task_config,
                                              pretrained_base_path="./tf_model.h5",
                                              weight_from="huggingface")

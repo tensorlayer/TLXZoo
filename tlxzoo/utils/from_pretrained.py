@@ -45,7 +45,9 @@ class ModuleFromPretrainedMixin:
             url, name = weights_path.rsplit("/", 1)
             maybe_download_and_extract(name, pretrained_base_path, url + "/")
             weights_path = os.path.join(pretrained_base_path, name)
-        module.load_weights(weights_path)
+
+        format = kwargs.pop("format", None)
+        module.load_weights(weights_path, format=format)
         return module
 
     def _load_huggingface_tf_weight(self, weight_path):

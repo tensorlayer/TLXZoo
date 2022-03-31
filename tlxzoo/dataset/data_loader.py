@@ -35,35 +35,24 @@ class ImageClassificationDataConfig(BaseDataConfig):
 @Registers.data_configs.register
 class ImageDetectionDataConfig(BaseDataConfig):
     task = BaseForObjectDetection
-    schema = object_detection_task_data_set_schema
+    schema = None
 
     def __init__(self,
                  per_device_train_batch_size=2,
                  per_device_eval_batch_size=2,
                  data_name="Coco",
+                 root_path="",
                  train_ann_path="",
                  val_ann_path="",
-                 strides=(8, 16, 32),
-                 anchors=(12, 16, 19, 36, 40, 28, 36, 75, 76, 55, 72, 146, 142, 110, 192, 243, 459, 401),
-                 num_classes=80,
-                 anchor_per_scale=3,
-                 max_bbox_per_scale=150,
-                 train_output_sizes=(52, 26, 13),
-                 train_input_size=416,
                  **kwargs):
         self.per_device_train_batch_size = per_device_train_batch_size
         self.per_device_eval_batch_size = per_device_eval_batch_size
         self.data_name = data_name
         self.task_type = self.task.task_type
+        self.root_path = root_path
         self.train_ann_path = train_ann_path
         self.val_ann_path = val_ann_path
-        self.strides = np.array(strides)
-        self.anchors = np.array(anchors).reshape(3, 3, 2)
-        self.num_classes = num_classes
-        self.anchor_per_scale = anchor_per_scale
-        self.max_bbox_per_scale = max_bbox_per_scale
-        self.train_output_sizes = np.array(train_output_sizes)
-        self.train_input_size = train_input_size
+
         super(ImageDetectionDataConfig, self).__init__(**kwargs)
 
 

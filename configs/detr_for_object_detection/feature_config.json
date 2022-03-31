@@ -1,0 +1,23 @@
+{
+    "size": 800,
+    "max_size": 1333,
+    "do_resize": true,
+    "do_normalize": true,
+    "resize_size": [
+        224,
+        224
+    ],
+    "mean": [
+        0.485,
+        0.456,
+        0.406
+    ],
+    "std": [
+        0.229,
+        0.224,
+        0.225
+    ],
+    "feature_class": "DetrFeature",
+    "config_type": "feature",
+    "config_class": "DetrFeatureConfig"
+}
