@@ -123,6 +123,27 @@ class TokenClassificationDataConfig(BaseDataConfig):
         self.task_type = self.task.task_type
         super(TokenClassificationDataConfig, self).__init__(**kwargs)
 
+
+@Registers.data_configs.register
+class AutomaticSpeechRecognitionDataConfig(BaseDataConfig):
+    task = BaseForAutomaticSpeechRecognition
+    schema = None
+
+    def __init__(self,
+                 per_device_train_batch_size=2,
+                 per_device_eval_batch_size=2,
+                 data_name="LibriSpeech",
+                 train_path="",
+                 test_path="",
+                 **kwargs):
+        self.per_device_train_batch_size = per_device_train_batch_size
+        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.data_name = data_name
+        self.train_path = train_path
+        self.test_path = test_path
+        self.task_type = self.task.task_type
+        super(AutomaticSpeechRecognitionDataConfig, self).__init__(**kwargs)
+
 # _configs = {BaseForImageClassification.task_type: ImageClassificationDataConfig}
 
 

@@ -23,11 +23,9 @@ feeding images of multiple sizes is by doing center cropping.
 from ..model import BaseModule
 from ...utils.registry import Registers
 
-import os
-import numpy as np
 import tensorlayerx as tlx
 from tensorlayerx import logging
-from tensorlayerx.nn import (BatchNorm, Conv2d, Dense, Flatten, SequentialLayer, MaxPool2d, Dropout)
+from tensorlayerx.nn import (BatchNorm, Conv2d, Linear, Flatten, SequentialLayer, MaxPool2d, Dropout)
 from ...utils.output import BaseModelOutput
 from dataclasses import dataclass
 from .config_vgg import VGGModelConfig
@@ -63,7 +61,7 @@ def make_layers(layer_config, config):
                     in_channels = layer_group[idx - 1]
                 layer_list.append(
                     Conv2d(
-                        n_filter=n_filter, filter_size=(3, 3), strides=(1, 1), act=tlx.ReLU, padding='SAME',
+                        out_channels=n_filter, kernel_size=(3, 3), stride=(1, 1), act=tlx.ReLU, padding='SAME',
                         in_channels=in_channels, name=layer_name
                     )
                 )
@@ -78,19 +76,19 @@ def make_layers(layer_config, config):
             layer_name = layer_names[layer_group_idx]
             if layer_group == 'M':
                 # padding="valid", strides=None
-                layer_list.append(MaxPool2d(filter_size=(2, 2), padding='valid', name=layer_name))
+                layer_list.append(MaxPool2d(kernel_size=(2, 2), padding='valid', name=layer_name))
                 # layer_list.append(MaxPool2d(filter_size=(2, 2), strides=(2, 2), padding='SAME', name=layer_name))
             elif layer_group == 'O':
-                layer_list.append(Dense(n_units=1000, in_channels=config.fc2_units, name=layer_name))
+                layer_list.append(Linear(out_features=1000, in_features=config.fc2_units, name=layer_name))
             elif layer_group == 'F':
                 layer_list.append(Dropout(0.7))
                 layer_list.append(Flatten(name='flatten'))
             elif layer_group == 'fc1':
                 layer_list.append(
-                    Dense(n_units=config.fc1_units, act=tlx.ReLU, in_channels=512, name=layer_name))
+                    Linear(out_features=config.fc1_units, act=tlx.ReLU, in_features=512, name=layer_name))
             elif layer_group == 'fc2':
                 layer_list.append(
-                    Dense(n_units=config.fc2_units, act=tlx.ReLU, in_channels=config.fc1_units, name=layer_name))
+                    Linear(out_features=config.fc2_units, act=tlx.ReLU, in_features=config.fc1_units, name=layer_name))
             if layer_name == config.end_with:
                 is_end = True
         if is_end:

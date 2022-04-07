@@ -152,6 +152,7 @@ class DetrForSegmentation(BaseForObjectDetection):
             import tensorflow as tf
 
             names = []
+            freeze_weights = []
             for w in self.all_weights:
                 name = w.name
                 if name.startswith("detr/"):
@@ -168,10 +169,12 @@ class DetrForSegmentation(BaseForObjectDetection):
                     continue
                 names.append(name + "/.ATTRIBUTES/VARIABLE_VALUE")
                 w.assign(array)
+                freeze_weights.append(w.name)
             # init_vars = tf.train.list_variables(file_path)
             # for name, shape in init_vars:
             #     if name not in names:
             #         print(name, shape)
+            self.freeze_weights = freeze_weights
             return self
 
         return super(DetrForSegmentation, self).load_weights(file_path, format=format, in_order=in_order, skip=skip)
@@ -183,7 +186,8 @@ class DetrForSegmentation(BaseForObjectDetection):
             class_cost=self.config.class_cost, bbox_cost=self.config.bbox_cost, giou_cost=self.config.giou_cost
         )
         # Second: create the criterion
-        losses = ["labels", "boxes", "cardinality", "masks"]
+        # losses = ["labels", "boxes", "cardinality", "masks"]
+        losses = ["masks"]
         criterion = DetrLoss(
             matcher=matcher,
             num_classes=self.config.num_labels,
@@ -195,7 +199,7 @@ class DetrForSegmentation(BaseForObjectDetection):
         outputs_loss["logits"] = logits
         outputs_loss["pred_boxes"] = pred_boxes
         outputs_loss["pred_masks"] = m_outputs["pred_masks"]
-        if self.config.auxiliary_loss:
+        if self.config.auxiliary_loss and ("labels" in losses or "boxes" in losses):
             outputs_loss["auxiliary_outputs"] = m_outputs["aux"]
 
         loss_dict = criterion(outputs_loss, labels)
@@ -205,13 +209,14 @@ class DetrForSegmentation(BaseForObjectDetection):
         weight_dict["loss_mask"] = self.config.mask_loss_coefficient
         weight_dict["loss_dice"] = self.config.dice_loss_coefficient
 
-        if self.config.auxiliary_loss:
+        if "auxiliary_outputs" in outputs_loss:
             aux_weight_dict = {}
             for i in range(self.config.model_config.num_decoder_layers - 1):
                 aux_weight_dict.update({k + f"_{i}": v for k, v in weight_dict.items()})
             weight_dict.update(aux_weight_dict)
 
         loss = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
+        loss = tlx.reduce_sum(loss)
         return loss
 
     def forward(self, inputs, pixel_mask=None):
@@ -236,7 +241,8 @@ class DetrForSegmentation(BaseForObjectDetection):
                                              tlx.get_tensor_shape(seg_masks)[-3], tlx.get_tensor_shape(seg_masks)[-2]])
         output["pred_masks"] = pred_masks
 
-        return output
+        return {"pred_logits": output["pred_logits"], "pred_boxes": output["pred_boxes"],
+                "pred_masks": output["pred_masks"], "aux": output["aux"]}
 
 
 class DetrMaskHeadSmallConv(tlx.nn.Module):

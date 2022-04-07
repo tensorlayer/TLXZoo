@@ -12,7 +12,6 @@ from PIL import Image
 import copy
 
 
-@Registers.datasets.register("Coco")
 class CocoDetection(Dataset, BaseDataSetMixin):
     def __init__(
         self, root, annFile, transforms=None, limit=None,
@@ -24,8 +23,19 @@ class CocoDetection(Dataset, BaseDataSetMixin):
         else:
             self.transforms = []
         self.ids = list(sorted(self.coco.imgs.keys()))
+        # clear 0 label
+        new_ids = []
+        for id in self.ids:
+            target = self._load_target(id)
+            anno = [obj for obj in target if "iscrowd" not in obj or obj["iscrowd"] == 0]
+            if len(anno) == 0:
+                continue
+            new_ids.append(id)
+        self.ids = new_ids
         if limit:
             self.ids = self.ids[:limit]
+
+        print("load ids:", len(self.ids))
 
         self.data_type = annFile.split("instances_")[-1].split(".json")[0]
         super(CocoDetection, self).__init__()

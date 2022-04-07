@@ -187,7 +187,10 @@ class DetrFeature(BaseImageFeature):
             # interpolated_masks = tlx.vision.transforms.resize(masks, (h, w), method="nearest")[:, 0] > 0.5
             # target["masks"] = tlx.convert_to_numpy(interpolated_masks)
             masks = np.transpose(target["masks"], axes=[1, 2, 0]).astype(float)
-            interpolated_masks = tlx.vision.transforms.resize(masks, (h, w), method="nearest") > 0.5
+            masks = tlx.convert_to_tensor(masks)
+            interpolated_masks = tlx.resize(masks, (h, w), method="nearest", antialias=False) > 0.5
+            interpolated_masks = tlx.convert_to_numpy(interpolated_masks)
+            # interpolated_masks = tlx.vision.transforms.resize(masks, (h, w), method="nearest") > 0.5
             interpolated_masks = np.transpose(interpolated_masks, axes=[2, 0, 1])
             target["masks"] = interpolated_masks
 
@@ -418,18 +421,26 @@ def post_process_segmentation(outputs, target_sizes, threshold=0.9, mask_thresho
         cur_scores = tlx.reduce_max(cur_logits, axis=-1)
         cur_classes = tlx.argmax(cur_logits, axis=-1)
 
-        keep = tlx.convert_to_numpy(keep)
-        cur_scores = tlx.convert_to_numpy(cur_scores)
-        cur_classes = tlx.convert_to_numpy(cur_classes)
-        cur_masks = tlx.convert_to_numpy(cur_masks)
+        # keep = tlx.convert_to_numpy(keep)
+        # cur_scores = tlx.convert_to_numpy(cur_scores)
+        # cur_classes = tlx.convert_to_numpy(cur_classes)
+        # cur_masks = tlx.convert_to_numpy(cur_masks)
         cur_scores = cur_scores[keep]
         cur_classes = cur_classes[keep]
         cur_masks = cur_masks[keep]
 
-        cur_masks = np.transpose(cur_masks, axes=[1, 2, 0])
+        # cur_masks = np.transpose(cur_masks, axes=[1, 2, 0])
+        cur_masks = tlx.transpose(cur_masks, perm=[1, 2, 0])
+        cur_masks = tlx.resize(cur_masks, output_size=tuple(size),
+                               method="bilinear", antialias=False)
 
-        cur_masks = tlx.vision.transforms.resize(cur_masks, tuple(size), method="bilinear")
-        cur_masks = np.transpose(cur_masks, axes=[2, 0, 1])
+        # cur_masks = tlx.vision.transforms.resize(cur_masks, tuple(size), method="bilinear")
+        # cur_masks = np.transpose(cur_masks, axes=[2, 0, 1])
+        cur_masks = tlx.transpose(cur_masks, perm=[2, 0, 1])
+
+        cur_scores = tlx.convert_to_numpy(cur_scores)
+        cur_classes = tlx.convert_to_numpy(cur_classes)
+        cur_masks = tlx.convert_to_numpy(cur_masks)
 
         def sigmoid(x):
             return 1 / (1 + np.exp(-x))

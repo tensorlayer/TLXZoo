@@ -1,0 +1,12 @@
+{
+    "vocab_size": 32,
+    "final_dropout": 0.1,
+    "diversity_loss_weight": 0.1,
+    "ctc_loss_reduction": "sum",
+    "ctc_zero_infinity": false,
+    "weights_path": "task.npz",
+    "model_config_path": "model_config.json",
+    "task_class": "Wav2Vec2ForAutomaticSpeechRecognition",
+    "config_type": "task",
+    "config_class": "Wav2Vec2ForAutomaticSpeechRecognitionTaskConfig"
+}

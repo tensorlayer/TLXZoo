@@ -1,0 +1,19 @@
+{
+    "feature_size": 1,
+    "sampling_rate": 16000,
+    "padding_value": 0.0,
+    "return_attention_mask": false,
+    "do_normalize": true,
+    "vocab_file": "./vocab.json",
+    "bos_token": "<s>",
+    "eos_token": "</s>",
+    "unk_token": "<unk>",
+    "pad_token": "<pad>",
+    "word_delimiter_token": "|",
+    "do_lower_case": false,
+    "speech_max_length": null,
+    "text_max_length": null,
+    "feature_class": "Wav2Vec2Feature",
+    "config_type": "feature",
+    "config_class": "Wav2Vec2FeatureConfig"
+}

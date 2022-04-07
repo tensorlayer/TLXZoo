@@ -1,56 +1,58 @@
-from tlxzoo.dataset import DataLoaders, ConditionalGeneration
+from tlxzoo.dataset import DataLoaders, TokenClassificationDataConfig
 import tensorlayerx as tlx
 import time
 import tensorflow as tf
-from tlxzoo.utils.metrics import bleu
 from tlxzoo.models.t5.feature_t5 import T5FeatureConfig, T5Feature
 
-t5_feat_config = T5FeatureConfig(vocab_file="./spiece.model", source_max_length=128, label_max_length=128)
+t5_feat_config = T5FeatureConfig(vocab_file="./spiece.model", prefix="", task="token",
+                                 source_max_length=256, label_max_length=256)
 t5_feat = T5Feature(t5_feat_config)
 
-data_config = ConditionalGeneration(per_device_train_batch_size=8,
-                                    per_device_eval_batch_size=1,
-                                    data_name="Text2Text",
-                                    source_train_path="./giga-fren.release2.fixed.en",
-                                    target_train_path="./giga-fren.release2.fixed.fr",
-                                    source_dev_path="newstest2014-fren-en.txt",
-                                    target_dev_path="newstest2014-fren-fr.txt",
-                                    num_workers=8)
-data_loaders = DataLoaders(data_config, train_limit=8)
-
+data_config = TokenClassificationDataConfig(per_device_train_batch_size=12,
+                                            per_device_eval_batch_size=12,
+                                            path="./data",
+                                            num_workers=8)
+data_loaders = DataLoaders(data_config)
 data_loaders.register_transform_hook(t5_feat)
 
 from tlxzoo.models.t5 import *
 
 t5_model_config = T5Config()
-t5_task_config = T5ForConditionalGenerationTaskConfig(t5_model_config)
+t5_task_config = T5ForTokenClassificationTaskConfig(t5_model_config)
+
 """
 download weight from https://huggingface.co/t5-base/tree/main
 """
-t5 = T5ForConditionalGeneration.from_pretrained(config=t5_task_config,
-                                                pretrained_base_path="./tf_model.h5",
-                                                weight_from="huggingface")
+t5 = T5ForTokenClassification.from_pretrained(config=t5_task_config,
+                                              pretrained_base_path="./tf_model.h5",
+                                              weight_from="huggingface")
 optimizer = tlx.optimizers.Adam(learning_rate=0.0001)
 
 loss_fn = t5.loss_fn
-metric = None
+metric = tlx.metrics.Accuracy()
 
 
-def valid_bleu(model, test_dataset):
+def valid(model, test_dataset):
     model.set_eval()
-    targets = []
-    predictions = []
+    metrics = tlx.metrics.Accuracy()
+    val_acc = 0
+    n_iter = 0
     for index, (X_batch, y_batch) in enumerate(test_dataset):
-        decode_id = model.generate_one(inputs=X_batch["inputs"], attention_mask=X_batch["attention_mask"])
-        decode_str = t5_feat.ids_to_string(decode_id[0])
-        label_str = t5_feat.ids_to_string(y_batch["labels"][0])
-        targets.append(label_str)
-        predictions.append(decode_str)
+        _logits = model(inputs=X_batch["inputs"], attention_mask=X_batch["attention_mask"])
+        for logit, y in zip(_logits, y_batch["labels"]):
+            mask = tlx.cast(tlx.not_equal(y, -100), dtype=tlx.int32)
+            mask_sum = int(tlx.reduce_sum(mask))
+            y = y[:mask_sum]
+            logit = logit[:mask_sum]
+            metrics.update(logit, y)
+        val_acc += metrics.result()
+        metrics.reset()
+        n_iter += 1
 
-    print(bleu(targets, predictions))
+    print(val_acc / n_iter)
 
-# 41.06
-valid_bleu(t5, data_loaders.test)
+
+# valid(t5, data_loaders.test)
 
 
 class Trainer(tlx.model.Model):
@@ -76,7 +78,12 @@ class Trainer(tlx.model.Model):
                 optimizer.apply_gradients(zip(grad, train_weights))
                 train_loss += _loss_ce
                 if metrics:
-                    metrics.update(_logits, y_batch)
+                    for logit, y in zip(_logits, y_batch["labels"]):
+                        mask = tlx.cast(tlx.not_equal(y, -100), dtype=tlx.int32)
+                        mask_sum = int(tlx.reduce_sum(mask))
+                        y = y[:mask_sum]
+                        logit = logit[:mask_sum]
+                        metrics.update(logit, y)
                     train_acc += metrics.result()
                     metrics.reset()
                 else:
@@ -86,14 +93,17 @@ class Trainer(tlx.model.Model):
                 if print_train_batch:
                     print("Epoch {} of {} {} took {}".format(epoch + 1, n_epoch, n_iter, time.time() - start_time))
                     print("   train loss: {}".format(train_loss / n_iter))
+                    print("   train acc:  {}".format(train_acc / n_iter))
 
             if epoch + 1 == 1 or (epoch + 1) % print_freq == 0:
                 print("Epoch {} of {} took {}".format(epoch + 1, n_epoch, time.time() - start_time))
                 print("   train loss: {}".format(train_loss / n_iter))
+                print("   train acc:  {}".format(train_acc / n_iter))
 
-        valid_bleu(network, test_dataset)
+            valid(network, test_dataset)
 
 
 model = Trainer(network=t5, loss_fn=loss_fn, optimizer=optimizer, metrics=metric)
-model.train(n_epoch=1, train_dataset=data_loaders.train, test_dataset=data_loaders.test, print_freq=1,
+# 0.9720519
+model.train(n_epoch=5, train_dataset=data_loaders.train, test_dataset=data_loaders.test, print_freq=1,
             print_train_batch=True)
