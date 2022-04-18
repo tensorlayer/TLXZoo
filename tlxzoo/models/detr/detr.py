@@ -9,8 +9,8 @@ class DetrModel(BaseModule):
         self.num_queries = config.num_queries
 
         self.backbone = ResNet50Backbone(config, name=name+'/backbone')
-        self.input_proj = tlx.layers.Conv2d(n_filter=config.model_dim, in_channels=2048,
-                                            filter_size=(1, 1), name=name+'/input_proj')
+        self.input_proj = tlx.layers.Conv2d(out_channels=config.model_dim, in_channels=2048,
+                                            kernel_size=(1, 1), name=name+'/input_proj')
         self.query_embed = FixedEmbedding((config.num_queries, config.model_dim),
                                           name=name+'/query_embed')
         self.transformer = Transformer(

@@ -57,12 +57,12 @@ class ResNetBase(tlx.nn.Module):
         super().__init__(name=name, **kwargs)
 
         self.pad1 = ZeroPad2d(3, name=name + '/pad1')
-        self.conv1 = Conv2d(n_filter=64, filter_size=(7, 7), strides=(2, 2), padding='valid', in_channels=3,
+        self.conv1 = Conv2d(out_channels=64, kernel_size=(7, 7), stride=(2, 2), padding='valid', in_channels=3,
                             b_init=None, name=name + '/conv1')
         self.bn1 = FrozenBatchNorm2D(config.backbone_bn_shape, name=name + '/bn1')
         self.relu = ReLU()
         self.pad2 = ZeroPad2d(1, name=name + '/pad2')
-        self.maxpool = MaxPool2d(filter_size=(3, 3), strides=(2, 2), padding='valid')
+        self.maxpool = MaxPool2d(kernel_size=(3, 3), stride=(2, 2), padding='valid')
 
     def forward(self, x):
         x = self.pad1(x)
@@ -166,20 +166,20 @@ class BottleNeck(tlx.nn.Module):
         self.pad = ZeroPad2d(dilation)
         self.relu = ReLU()
 
-        self.conv1 = Conv2d(n_filter=dim1, filter_size=(1, 1), in_channels=first_in_channels, padding="valid",
+        self.conv1 = Conv2d(out_channels=dim1, kernel_size=(1, 1), in_channels=first_in_channels, padding="valid",
                             b_init=None, name=name + '/conv1')
         self.bn1 = FrozenBatchNorm2D(bn_shape[0], name=name + '/bn1')
 
-        self.conv2 = Conv2d(n_filter=dim1, filter_size=(3, 3), in_channels=dim1, strides=(strides, strides),
-                            dilation_rate=(dilation, dilation), b_init=None, name=name + '/conv2', padding="valid")
+        self.conv2 = Conv2d(out_channels=dim1, kernel_size=(3, 3), in_channels=dim1, stride=(strides, strides),
+                            dilation=(dilation, dilation), b_init=None, name=name + '/conv2', padding="valid")
         self.bn2 = FrozenBatchNorm2D(bn_shape[1], name=name + '/bn2')
 
-        self.conv3 = Conv2d(n_filter=dim2, filter_size=(1, 1), in_channels=dim1, b_init=None, padding="valid",
+        self.conv3 = Conv2d(out_channels=dim2, kernel_size=(1, 1), in_channels=dim1, b_init=None, padding="valid",
                             name=name + '/conv3')
         self.bn3 = FrozenBatchNorm2D(bn_shape[2], name=name + '/bn3')
 
         if self.downsample:
-            self.downsample_conv = Conv2d(n_filter=dim2, filter_size=(1, 1), strides=(strides, strides),
+            self.downsample_conv = Conv2d(out_channels=dim2, kernel_size=(1, 1), stride=(strides, strides),
                                           padding="valid",
                                           in_channels=first_in_channels, b_init=None, name=name + '/downsample_conv')
             self.downsample_bn = FrozenBatchNorm2D(bn_shape[3], name=name + '/downsample_bn')
@@ -340,7 +340,7 @@ class EncoderLayer(tlx.nn.Module):
         self.self_attn = MultiHeadAttention(model_dim, num_heads, dropout=dropout,
                                             name=name + '/self_attn')
 
-        self.dropout = tlx.nn.Dropout(1 - dropout)
+        self.dropout = tlx.nn.Dropout(dropout)
         if activation == "relu":
             self.activation = ReLU()
 
@@ -390,7 +390,7 @@ class DecoderLayer(tlx.nn.Module):
         self.multihead_attn = MultiHeadAttention(model_dim, num_heads, dropout=dropout,
                                                  name=name+'/multihead_attn')
 
-        self.dropout = tlx.nn.Dropout(1 - dropout)
+        self.dropout = tlx.nn.Dropout(dropout)
         if activation == "relu":
             self.activation = ReLU()
 
@@ -448,7 +448,7 @@ class MultiHeadAttention(tlx.nn.Module):
         assert model_dim % num_heads == 0
         self.head_dim = model_dim // num_heads
 
-        self.dropout = tlx.nn.Dropout(keep=(1 - dropout))
+        self.dropout = tlx.nn.Dropout(dropout)
 
         in_dim = self.model_dim * 3
 
@@ -549,7 +549,7 @@ class PositionEmbeddingSine(tlx.nn.Module):
             y_embed = y_embed / (y_embed[:, -1:, :] + self.eps) * self.scale
             x_embed = x_embed / (x_embed[:, :, -1:] + self.eps) * self.scale
 
-        dim_t = tlx.range(self.num_pos_features, dtype=tlx.float32)
+        dim_t = tlx.arange(self.num_pos_features, dtype=tlx.float32)
         dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_features)
 
         pos_x = x_embed[..., None] / dim_t

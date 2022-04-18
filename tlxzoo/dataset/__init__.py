@@ -5,4 +5,4 @@ from .qqp import QQPDataSetDict
 from .conll2003 import Conll2003DataSetDict
 from .LibriSpeech import *
 from .coco import *
-
+from .iam import *

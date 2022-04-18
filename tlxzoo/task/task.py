@@ -63,3 +63,18 @@ class BaseForPairTextClassification(BaseTask):
 @Registers.tasks.register
 class BaseForTokenClassification(BaseTask):
     task_type = "token_classification"
+
+
+@Registers.tasks.register
+class BaseForAutomaticSpeechRecognition(BaseTask):
+    task_type = "automatic_speech_recognition"
+
+
+@Registers.tasks.register
+class BaseForOpticalCharacterRecognition(BaseTask):
+    task_type = "optical_character_recognition"
+
+
+@Registers.tasks.register
+class BaseForHumanPoseEstimation(BaseTask):
+    task_type = "human_pose_estimation"

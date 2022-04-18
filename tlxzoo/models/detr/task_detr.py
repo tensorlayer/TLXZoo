@@ -61,6 +61,18 @@ class DetrForObjectDetection(BaseForObjectDetection):
 
         return super(DetrForObjectDetection, self).load_weights(file_path, format=format, in_order=in_order, skip=skip)
 
+    def _load_huggingface_tf_weight(self, weight_path):
+        import h5py
+        file = h5py.File(weight_path, "r")
+
+        for w in self.all_weights:
+            huggingface_weight_name = w.name
+            huggingface_weight = file[huggingface_weight_name]
+            huggingface_weight = tlx.convert_to_tensor(huggingface_weight)
+            w.assign(huggingface_weight)
+
+        return self
+
     def loss_fn(self, m_outputs, labels):
         logits, pred_boxes = m_outputs["pred_logits"], m_outputs["pred_boxes"]
         # First: create the matcher
@@ -170,10 +182,7 @@ class DetrForSegmentation(BaseForObjectDetection):
                 names.append(name + "/.ATTRIBUTES/VARIABLE_VALUE")
                 w.assign(array)
                 freeze_weights.append(w.name)
-            # init_vars = tf.train.list_variables(file_path)
-            # for name, shape in init_vars:
-            #     if name not in names:
-            #         print(name, shape)
+
             self.freeze_weights = freeze_weights
             return self
 
@@ -250,31 +259,31 @@ class DetrMaskHeadSmallConv(tlx.nn.Module):
     Simple convolutional head, using group norm. Upsampling is done using a FPN approach
     """
 
-    def __init__(self, dim, fpn_dims, context_dim):
-        super().__init__()
+    def __init__(self, dim, fpn_dims, context_dim, name="mask_head"):
+        super().__init__(name=name)
 
         assert (
             dim % 8 == 0
         ), "The hidden_size + number of attention heads must be divisible by 8 as the number of groups in GroupNorm is set to 8"
 
         inter_dims = [dim, context_dim // 2, context_dim // 4, context_dim // 8, context_dim // 16, context_dim // 64]
-        self.lay1 = tlx.nn.Conv2d(in_channels=dim, n_filter=dim, filter_size=(3, 3))
-        self.gn1 = GroupNorm(dim)
-        self.lay2 = tlx.nn.Conv2d(in_channels=dim, n_filter=inter_dims[1], filter_size=(3, 3))
-        self.gn2 = GroupNorm(inter_dims[1])
-        self.lay3 = tlx.nn.Conv2d(in_channels=inter_dims[1], n_filter=inter_dims[2], filter_size=(3, 3))
-        self.gn3 = GroupNorm(inter_dims[2])
-        self.lay4 = tlx.nn.Conv2d(in_channels=inter_dims[2], n_filter=inter_dims[3], filter_size=(3, 3))
-        self.gn4 = GroupNorm(inter_dims[3])
-        self.lay5 = tlx.nn.Conv2d(in_channels=inter_dims[3], n_filter=inter_dims[4], filter_size=(3, 3))
-        self.gn5 = GroupNorm(inter_dims[4])
-        self.out_lay = tlx.nn.Conv2d(in_channels=inter_dims[4], n_filter=1, filter_size=(3, 3))
+        self.lay1 = tlx.nn.Conv2d(in_channels=dim, out_channels=dim, kernel_size=(3, 3), name=name+"/lay1")
+        self.gn1 = GroupNorm(dim, name=name+"/gn1")
+        self.lay2 = tlx.nn.Conv2d(in_channels=dim, out_channels=inter_dims[1], kernel_size=(3, 3), name=name+"/lay2")
+        self.gn2 = GroupNorm(inter_dims[1], name=name+"/gn2")
+        self.lay3 = tlx.nn.Conv2d(in_channels=inter_dims[1], out_channels=inter_dims[2], kernel_size=(3, 3), name=name+"/lay3")
+        self.gn3 = GroupNorm(inter_dims[2], name=name+"/gn3")
+        self.lay4 = tlx.nn.Conv2d(in_channels=inter_dims[2], out_channels=inter_dims[3], kernel_size=(3, 3), name=name+"/lay4")
+        self.gn4 = GroupNorm(inter_dims[3], name=name+"/gn4")
+        self.lay5 = tlx.nn.Conv2d(in_channels=inter_dims[3], out_channels=inter_dims[4], kernel_size=(3, 3), name=name+"/lay5")
+        self.gn5 = GroupNorm(inter_dims[4], name=name+"/gn5")
+        self.out_lay = tlx.nn.Conv2d(in_channels=inter_dims[4], out_channels=1, kernel_size=(3, 3), name=name+"/out_lay")
 
         self.dim = dim
 
-        self.adapter1 = tlx.nn.Conv2d(in_channels=fpn_dims[0], n_filter=inter_dims[1], filter_size=(1, 1))
-        self.adapter2 = tlx.nn.Conv2d(in_channels=fpn_dims[1], n_filter=inter_dims[2], filter_size=(1, 1))
-        self.adapter3 = tlx.nn.Conv2d(in_channels=fpn_dims[2], n_filter=inter_dims[3], filter_size=(1, 1))
+        self.adapter1 = tlx.nn.Conv2d(in_channels=fpn_dims[0], out_channels=inter_dims[1], kernel_size=(1, 1), name=name+"/adapter1")
+        self.adapter2 = tlx.nn.Conv2d(in_channels=fpn_dims[1], out_channels=inter_dims[2], kernel_size=(1, 1), name=name+"/adapter2")
+        self.adapter3 = tlx.nn.Conv2d(in_channels=fpn_dims[2], out_channels=inter_dims[3], kernel_size=(1, 1), name=name+"/adapter3")
 
     def forward(self, x, bbox_mask, fpns):
         # here we concatenate x, the projected feature map, of shape (batch_size, d_model, heigth/32, width/32) with
@@ -334,15 +343,15 @@ class DetrMaskHeadSmallConv(tlx.nn.Module):
 class DetrMHAttentionMap(tlx.nn.Module):
     """This is a 2D attention module, which only returns the attention softmax (no multiplication by value)"""
 
-    def __init__(self, query_dim, hidden_dim, num_heads, dropout=0.0, bias=True, std=None):
-        super().__init__()
+    def __init__(self, query_dim, hidden_dim, num_heads, dropout=0.0, bias=True, std=None, name="bbox_attention"):
+        super().__init__(name=name)
         self.num_heads = num_heads
         self.hidden_dim = hidden_dim
         self.query_dim = query_dim
         # self.dropout = tlx.nn.Dropout(1 - dropout)
 
-        self.q_linear = Linear(query_dim, hidden_dim)
-        self.k_linear = Linear(query_dim, hidden_dim)
+        self.q_linear = Linear(query_dim, hidden_dim, name=name+"/q_linear")
+        self.k_linear = Linear(query_dim, hidden_dim, name=name+"/k_linear")
 
         self.normalize_fact = float(hidden_dim / self.num_heads) ** -0.5
 
@@ -566,7 +575,7 @@ class DetrLoss(tlx.nn.Module):
 
         loss_giou = generalized_box_iou(center_to_corners_format(src_boxes), center_to_corners_format(target_boxes))
         shape = tlx.get_tensor_shape(loss_giou)[0]
-        shape = tlx.range(shape)
+        shape = tlx.arange(shape)
         shape = tlx.stack([shape, shape])
         shape = tlx.transpose(shape)
         loss_giou = tlx.gather_nd(loss_giou, shape)

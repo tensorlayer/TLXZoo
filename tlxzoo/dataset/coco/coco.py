@@ -64,15 +64,89 @@ class CocoDetection(Dataset, BaseDataSetMixin):
         return len(self.ids)
 
 
+class CocoHumanPoseEstimation(Dataset, BaseDataSetMixin):
+    def __init__(
+        self, root, annFile, transforms=None, limit=None,
+    ):
+        self.coco = COCO(annFile)
+        self.root = root
+        if transforms is not None:
+            self.transforms = transforms
+        else:
+            self.transforms = []
+        self.ids = list(sorted(self.coco.imgs.keys()))
+        print(len(self.ids))
+
+        new_ids = []
+        for id in self.ids:
+            target = self._load_target(id)
+            if not target:
+                continue
+
+            for index, t in enumerate(target):
+                keypoints = t["keypoints"]
+                if sum(keypoints) == 0:
+                    continue
+                new_ids.append((id, index))
+        self.ids = new_ids
+
+        if limit:
+            self.ids = self.ids[:limit]
+
+        print("load ids:", len(self.ids))
+
+        self.data_type = annFile.split("person_keypoints_")[-1].split(".json")[0]
+        super(CocoHumanPoseEstimation, self).__init__()
+
+    def _load_image(self, id: int):
+        path = self.coco.loadImgs(id)[0]["file_name"]
+        return Image.open(os.path.join(self.root, self.data_type, path)).convert('RGB')
+
+    def _load_target(self, id):
+        return self.coco.loadAnns(self.coco.getAnnIds(id))
+
+    def __getitem__(self, index: int):
+        id, index = self.ids[index]
+        image = self._load_image(id)
+        target = self._load_target(id)[index]
+        text = os.path.join(self.root, self.data_type, self.coco.loadImgs(id)[0]["file_name"]) + " "
+        text += str(image.height) + " "
+        text += str(image.width) + " "
+        text += " ".join([str(i) for i in target["bbox"]]) + " "
+        text += " ".join([str(i) for i in target["keypoints"]]) + " "
+
+        target = {'image_id': id, 'annotations': target, "text": text.strip()}
+
+        image, target = self.transform(image, target)
+
+        return image, {"target": target, "text": text.strip()}
+
+    def __len__(self) -> int:
+        return len(self.ids)
+
+
 @Registers.datasets.register("Coco")
 class CocoDataSetDict(BaseDataSetDict):
     @classmethod
     def load(cls, train_limit=None, config=None):
 
-        return cls({"train": CocoDetection(config.root_path, config.train_ann_path, limit=train_limit),
-                    "test": CocoDetection(config.root_path, config.val_ann_path)})
+        if "person_keypoints_" in config.train_ann_path:
+            return cls({"train": CocoHumanPoseEstimation(config.root_path, config.train_ann_path, limit=train_limit),
+                        "test": CocoHumanPoseEstimation(config.root_path, config.val_ann_path)})
+        else:
+            return cls({"train": CocoDetection(config.root_path, config.train_ann_path, limit=train_limit),
+                        "test": CocoDetection(config.root_path, config.val_ann_path)})
 
     def get_object_detection_schema_dataset(self, dataset_type, config=None):
+
+        if dataset_type == "train":
+            dataset = self["train"]
+        else:
+            dataset = self["test"]
+
+        return dataset
+
+    def get_human_pose_estimation_schema_dataset(self, dataset_type, config=None):
 
         if dataset_type == "train":
             dataset = self["train"]

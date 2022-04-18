@@ -57,6 +57,30 @@ class ImageDetectionDataConfig(BaseDataConfig):
 
 
 @Registers.data_configs.register
+class HumanPoseEstimationDataConfig(BaseDataConfig):
+    task = BaseForHumanPoseEstimation
+    schema = None
+
+    def __init__(self,
+                 per_device_train_batch_size=2,
+                 per_device_eval_batch_size=2,
+                 data_name="Coco",
+                 root_path="",
+                 train_ann_path="",
+                 val_ann_path="",
+                 **kwargs):
+        self.per_device_train_batch_size = per_device_train_batch_size
+        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.data_name = data_name
+        self.task_type = self.task.task_type
+        self.root_path = root_path
+        self.train_ann_path = train_ann_path
+        self.val_ann_path = val_ann_path
+
+        super(HumanPoseEstimationDataConfig, self).__init__(**kwargs)
+
+
+@Registers.data_configs.register
 class ConditionalGeneration(BaseDataConfig):
     task = BaseForConditionalGeneration
     schema = None
@@ -144,11 +168,34 @@ class AutomaticSpeechRecognitionDataConfig(BaseDataConfig):
         self.task_type = self.task.task_type
         super(AutomaticSpeechRecognitionDataConfig, self).__init__(**kwargs)
 
+
+@Registers.data_configs.register
+class OpticalCharacterRecognitionDataConfig(BaseDataConfig):
+    task = BaseForAutomaticSpeechRecognition
+    schema = None
+
+    def __init__(self,
+                 per_device_train_batch_size=2,
+                 per_device_eval_batch_size=2,
+                 data_name="IAM",
+                 root_path="",
+                 train_ann_path="",
+                 val_ann_path="",
+                 **kwargs):
+        self.per_device_train_batch_size = per_device_train_batch_size
+        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.data_name = data_name
+        self.root_path = root_path
+        self.train_ann_path = train_ann_path
+        self.val_ann_path = val_ann_path
+        self.task_type = self.task.task_type
+        super(OpticalCharacterRecognitionDataConfig, self).__init__(**kwargs)
+
 # _configs = {BaseForImageClassification.task_type: ImageClassificationDataConfig}
 
 
 class DataLoaders(object):
-    def __init__(self, config, train_limit=None, collate_fn=None):
+    def __init__(self, config, train_limit=None, collate_fn=None, transform_hook=None, transform_hook_index=None):
         self.config = config
         self.dataset_dict = Registers.datasets[self.config.data_name].load(train_limit, config=self.config)
 
@@ -156,19 +203,27 @@ class DataLoaders(object):
 
         if "train" in self.dataset_dict:
             train_data = get_schema_dataset_func("train", config)
+            if transform_hook:
+                train_data.register_transform_hook(transform_hook, index=transform_hook_index)
             self.train = self.dataset_dataloader(train_data, dataset_type="train", collate_fn=collate_fn,
                                                  num_workers=config.num_workers)
         else:
             self.train = None
 
         if "eval" in self.dataset_dict:
-            self.eval = self.dataset_dataloader(get_schema_dataset_func("eval", config), collate_fn=collate_fn,
+            eval_data = get_schema_dataset_func("eval", config)
+            if transform_hook:
+                eval_data.register_transform_hook(transform_hook, index=transform_hook_index)
+            self.eval = self.dataset_dataloader(eval_data, collate_fn=collate_fn,
                                                 dataset_type="eval")
         else:
             self.eval = None
 
         if "test" in self.dataset_dict:
-            self.test = self.dataset_dataloader(get_schema_dataset_func("test", config), collate_fn=collate_fn,
+            test_data = get_schema_dataset_func("test", config)
+            if transform_hook:
+                test_data.register_transform_hook(transform_hook, index=transform_hook_index)
+            self.test = self.dataset_dataloader(test_data, collate_fn=collate_fn,
                                                 dataset_type="test")
         else:
             self.test = None
