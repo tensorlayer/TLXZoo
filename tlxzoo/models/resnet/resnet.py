@@ -23,8 +23,8 @@ class ResNet(BaseModule):
         batch_norm_epsilon = config.batch_norm_epsilon
         drop_rate = config.drop_rate
 
-        if num_layers not in (20, 32, 44, 56, 110):
-            raise ValueError('num_layers must be one of 20, 32, 44, 56 or 110.')
+        if num_layers not in (20, 32, 44, 50, 56, 110):
+            raise ValueError('num_layers must be one of 20, 32, 44, 50, 56 or 110.')
 
         self._num_layers = num_layers
         self._shortcut_connection = shortcut_connection
