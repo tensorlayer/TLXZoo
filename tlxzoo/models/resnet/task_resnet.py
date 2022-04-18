@@ -23,7 +23,7 @@ class ResNetForImageClassification(BaseForImageClassification):
             self.resnet = ResNet(self.config.model_config)
 
         self.num_labels = config.num_labels
-        self._final_conv = tlx.nn.Conv2d(self.num_labels, filter_size=(1, 1), strides=(1, 1), W_init=glorot_uniform,
+        self._final_conv = tlx.nn.Conv2d(self.num_labels, kernel_size=(1, 1), stride=(1, 1), W_init=glorot_uniform,
                                          b_init="zeros", in_channels=64, name="final_conv")
 
     def forward(self, pixels, labels=None):

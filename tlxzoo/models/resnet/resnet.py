@@ -35,7 +35,7 @@ class ResNet(BaseModule):
         self._num_units = (num_layers - 2) // 6
 
         self._init_conv = tlx.nn.Conv2d(16, in_channels=3, W_init=glorot_uniform, b_init=None, name="init_conv")
-        self.dropout_1 = tlx.nn.Dropout(keep=1 - drop_rate)
+        self.dropout_1 = tlx.nn.Dropout(drop_rate)
 
         self._block1 = tlx.nn.SequentialLayer([ResNetUnit(
             16,
@@ -69,7 +69,7 @@ class ResNet(BaseModule):
 
         self._final_bn = tlx.nn.BatchNorm(decay=batch_norm_momentum, epsilon=batch_norm_epsilon, num_features=64,
                                           gamma_init="ones", moving_var_init="ones", name="final_bn")
-        self.dropout_2 = tlx.nn.Dropout(keep=1 - drop_rate)
+        self.dropout_2 = tlx.nn.Dropout(drop_rate)
 
         # self._final_conv = tlx.nn.Conv2d(10, filter_size=(1, 1), strides=(1, 1), W_init=glorot_uniform,
         #                                  b_init="zeros", in_channels=64, name="final_conv")
@@ -114,7 +114,7 @@ class ResNetUnit(tlx.nn.Module):
                                      num_features=depth if stride == 1 else int(depth / 2),
                                      gamma_init="ones", moving_var_init="ones", name="batchnorm_1")
 
-        self.dropout_1 = tlx.nn.Dropout(keep=1 - drop_rate)
+        self.dropout_1 = tlx.nn.Dropout(drop_rate)
 
         self._conv1 = tlx.nn.Conv2d(depth, (3, 3), (stride, stride),
                                     in_channels=depth if stride == 1 else int(depth / 2),
@@ -123,13 +123,13 @@ class ResNetUnit(tlx.nn.Module):
         self._bn2 = tlx.nn.BatchNorm(decay=batch_norm_momentum, epsilon=batch_norm_epsilon,
                                      num_features=depth,
                                      gamma_init="ones", moving_var_init="ones", name="batchnorm_2")
-        self.dropout_2 = tlx.nn.Dropout(keep=1 - drop_rate)
+        self.dropout_2 = tlx.nn.Dropout(drop_rate)
 
         self._conv2 = tlx.nn.Conv2d(depth, (3, 3), (1, 1), in_channels=depth if stride == 1 else int(depth / 2),
                                     W_init=glorot_uniform, b_init=None, name="conv2")
 
     def forward(self, inputs):
-        depth_in = inputs.shape[3]
+        depth_in = tlx.get_tensor_shape(inputs)[3]
         depth = self._depth
         preact = tlx.relu(self._bn1(inputs))
         preact = self.dropout_1(preact)
@@ -137,16 +137,8 @@ class ResNetUnit(tlx.nn.Module):
         shortcut = preact if self._shortcut_from_preact else inputs
 
         if depth != depth_in:
-
-            if tlx.ops.load_backend.BACKEND == "tensorflow":
-                import tensorflow as tf
-                shortcut = tf.nn.avg_pool2d(
-                    shortcut, (2, 2), strides=(1, 2, 2, 1), padding='SAME')
-                shortcut = tf.pad(
-                    shortcut, [[0, 0], [0, 0], [0, 0], [(depth - depth_in) // 2] * 2])
-            else:
-                shortcut = tlx.backend.ops.avg_pool(shortcut, (2, 2), strides=(1, 2, 2, 1), padding='SAME')
-                shortcut = tlx.pad(shortcut, [[0, 0], [0, 0], [0, 0], [(depth - depth_in) // 2] * 2])
+            shortcut = tlx.backend.ops.avg_pool(shortcut, (2, 2), strides=(1, 2, 2, 1), padding='SAME')
+            shortcut = tlx.pad(shortcut, [[0, 0], [0, 0], [0, 0], [(depth - depth_in) // 2] * 2])
 
         net = self._conv1(preact)
         residual = tlx.relu(self._bn2(net))
