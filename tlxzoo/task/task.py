@@ -78,3 +78,20 @@ class BaseForOpticalCharacterRecognition(BaseTask):
 @Registers.tasks.register
 class BaseForHumanPoseEstimation(BaseTask):
     task_type = "human_pose_estimation"
+
+
+@Registers.tasks.register
+class BaseForFaceRecognition(BaseTask):
+    task_type = "face_recognition"
+
+    def __call__(self, *args, return_output=True, **kwargs):
+        if return_output:
+            return super(BaseTask, self).__call__(*args, **kwargs)
+        else:
+            return super(BaseTask, self).__call__(*args, **kwargs).logits
+
+
+@Registers.tasks.register
+class BaseForFaceEmbedding(BaseForFaceRecognition):
+    task_type = "face_embedding"
+

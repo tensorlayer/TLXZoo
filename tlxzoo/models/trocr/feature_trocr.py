@@ -5,6 +5,7 @@ from ...utils.registry import Registers
 from PIL import Image
 import PIL.Image
 import numpy as np
+import cv2
 import regex as re
 import json
 import tensorlayerx as tlx
@@ -250,7 +251,8 @@ class TrOCRFeature(BaseImageFeature):
         return image
 
     def to_numpy_array(self, image, rescale=None, channel_first=True):
-        image = np.array(image)
+        if isinstance(image, Image.Image):
+            image = np.array(image)
 
         if rescale is None:
             rescale = isinstance(image.flat[0], np.integer)
@@ -301,3 +303,22 @@ class TrOCRFeature(BaseImageFeature):
 
         return tlx.dataflow.dataloader.utils.default_convert(({"inputs": input_values}, {"inputs": input_ids,
                                                                                          "attention_mask": attention_mask, "texts": texts}))
+
+
+@Registers.features.register
+class CV2TrOCRFeature(TrOCRFeature):
+    def __call__(self, image_path, text):
+        image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = self.process_image(image)
+
+        labels = self.string_to_ids(text, max_length=self.config.max_length)
+
+        return {"inputs": image}, labels
+
+    def resize(self, image, size, resample=None):
+        if isinstance(size, int):
+            size = (size, size)
+        elif isinstance(size, list):
+            size = tuple(size)
+        return cv2.resize(image, size, interpolation=cv2.INTER_LINEAR)

@@ -6,3 +6,5 @@ from .conll2003 import Conll2003DataSetDict
 from .LibriSpeech import *
 from .coco import *
 from .iam import *
+from .synth90k import *
+from .wider import *

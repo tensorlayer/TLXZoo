@@ -2,10 +2,7 @@ import numpy as np
 import cv2
 from ...utils.registry import Registers
 from ..dataset import BaseDataSetDict, Dataset, BaseDataSetMixin
-from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
 import tensorlayerx as tlx
-import pycocotools.mask as mask_util
 import contextlib
 import os
 from PIL import Image
@@ -16,6 +13,7 @@ class CocoDetection(Dataset, BaseDataSetMixin):
     def __init__(
         self, root, annFile, transforms=None, limit=None,
     ):
+        from pycocotools.coco import COCO
         self.coco = COCO(annFile)
         self.root = root
         if transforms is not None:
@@ -68,6 +66,7 @@ class CocoHumanPoseEstimation(Dataset, BaseDataSetMixin):
     def __init__(
         self, root, annFile, transforms=None, limit=None,
     ):
+        from pycocotools.coco import COCO
         self.coco = COCO(annFile)
         self.root = root
         if transforms is not None:
@@ -163,11 +162,12 @@ class CocoEvaluator(object):
 
         self.iou_type = iou_type
         self.img_ids = []
-
+        from pycocotools.cocoeval import COCOeval
         self.coco_eval = COCOeval(coco_gt, iouType=iou_type)
         self.eval_imgs = []
 
     def update(self, predictions):
+        from pycocotools.coco import COCO
         img_ids = list(np.unique(list(predictions.keys())))
         self.img_ids.extend(img_ids)
 
@@ -232,6 +232,7 @@ class CocoEvaluator(object):
         return coco_results
 
     def prepare_for_coco_segmentation(self, predictions):
+        import pycocotools.mask as mask_util
         coco_results = []
         for original_id, prediction in predictions.items():
             if len(prediction) == 0:
