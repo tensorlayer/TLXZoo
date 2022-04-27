@@ -5,7 +5,7 @@
 import tensorlayerx as tlx
 from tensorlayerx import logging
 from tensorlayerx.nn.core import Module
-from tensorlayerx.nn.core import LayerList
+from tensorlayerx.nn import LayerList
 import numpy as np
 import math
 

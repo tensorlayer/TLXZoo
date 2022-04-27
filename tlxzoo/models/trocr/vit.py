@@ -417,7 +417,7 @@ class ViTEncoder(Module):
     def __init__(self, config, name="", **kwargs):
         super().__init__(name=name, **kwargs)
 
-        self.layer = tlx.nn.core.LayerList([ViTLayer(config, name=name+f"/layer_._{i}") for i in range(config.num_hidden_layers)])
+        self.layer = tlx.nn.ModuleList([ViTLayer(config, name=name+f"/layer_._{i}") for i in range(config.num_hidden_layers)])
 
     def forward(
             self,

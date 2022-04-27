@@ -63,7 +63,7 @@ class TrOCRLearnedPositionalEmbedding(TrOCREmbedding):
         # Bart is set up so that if padding_idx is specified then offset the embedding ids by 2
         # and adjust num_embeddings appropriately. Other models don't have this hack
         self.offset = 2
-        super().__init__(vocabulary_size=num_embeddings + self.offset, embedding_size=embedding_dim, **kwargs)
+        super().__init__(num_embeddings=num_embeddings + self.offset, embedding_dim=embedding_dim, **kwargs)
 
     def forward(self, input_shape, past_key_values_length: int = 0):
         """Input is expected to be of size [bsz x seqlen]."""
@@ -402,7 +402,7 @@ class TrOCRDecoder(Module):
         self.padding_idx = config.pad_token_id
         self.embed_scale = math.sqrt(config.hidden_size) if config.scale_embedding else 1.0
 
-        self.embed_tokens = tlx.nn.Embedding(vocabulary_size=config.vocab_size, embedding_size=config.hidden_size)
+        self.embed_tokens = tlx.nn.Embedding(num_embeddings=config.vocab_size, embedding_dim=config.hidden_size)
 
         if config.use_learned_position_embeddings:
             self.embed_positions = TrOCRLearnedPositionalEmbedding(config.max_position_embeddings, config.hidden_size)
@@ -419,7 +419,7 @@ class TrOCRDecoder(Module):
         else:
             self.layernorm_embedding = None
 
-        self.decode_layers = tlx.nn.core.LayerList([TrOCRDecoderLayer(config) for _ in range(config.decoder_layers)])
+        self.decode_layers = tlx.nn.ModuleList([TrOCRDecoderLayer(config) for _ in range(config.decoder_layers)])
 
     def get_input_embeddings(self):
         return self.embed_tokens

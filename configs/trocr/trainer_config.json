@@ -1,0 +1,13 @@
+{
+    "loss": "softmax_cross_entropy_with_logits",
+    "optimizers": "Adam",
+    "lr": {
+        "learning_rate": 1e-05
+    },
+    "metric": null,
+    "seed": 42,
+    "epochs": 2,
+    "clip_epochs": null,
+    "config_type": "trainer",
+    "config_class": "BaseTrainerConfig"
+}

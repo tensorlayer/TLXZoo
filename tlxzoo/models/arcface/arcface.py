@@ -70,11 +70,11 @@ class ArcFace(nn.Module):
 
         self.backbone = ResNet50(None, use_preprocess=False)
 
-        self.bn = nn.BatchNorm(decay=0.99, epsilon=1.001e-5, name="bn")
+        self.bn = nn.BatchNorm(0.99, epsilon=1.001e-5, name="bn")
         self.dropout = nn.Dropout(0.5)
         self.flatten = nn.Flatten()
         self.dense = nn.Linear(out_features=embd_shape, name="dense")
-        self.bn2 = nn.BatchNorm(decay=0.99, epsilon=1.001e-5, name="bn2")
+        self.bn2 = nn.BatchNorm(0.99, epsilon=1.001e-5, name="bn2")
 
         self.size = size
 
@@ -87,8 +87,6 @@ class ArcFace(nn.Module):
 
     def forward(self, inputs):
         x, _, _ = self.backbone(inputs)
-        print(123, tlx.reduce_sum(x))
-        print(x[0][0][:10])
 
         x = self.bn(x)
         x = self.dropout(x)

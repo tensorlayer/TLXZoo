@@ -114,6 +114,11 @@ class TrOCRModelConfig(BaseModelConfig):
             **kwargs,
         )
 
+    def _post_dict(self, _dict):
+        _dict["vit_config"] = _dict["vit_config"].to_dict()
+        _dict["trocr_decoder_config"] = _dict["trocr_decoder_config"].to_dict()
+        return super(BaseModelConfig, self)._post_dict(_dict)
+
 
 @Registers.task_configs.register
 class TrOCRForOpticalCharacterRecognitionTaskConfig(BaseTaskConfig):

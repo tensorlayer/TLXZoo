@@ -3,7 +3,7 @@ import tensorlayerx as tlx
 from ..model import BaseModule
 from tensorlayerx.nn.core import Module
 import importlib
-from tensorlayerx.nn.core import LayerList
+from tensorlayerx.nn import LayerList
 
 LARGE_NEGATIVE = -1e8
 

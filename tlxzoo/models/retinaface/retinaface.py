@@ -185,19 +185,19 @@ class RetinaFaceModel(nn.Module):
 
         features = [SSH(out_ch=out_ch, wd=self.wd, name=f'SSH_{i}')
                     for i, f in enumerate(self.backbone_pick_layers)]
-        self.features = nn.LayerList(features)
+        self.features = nn.ModuleList(features)
 
         bboxheads = [BboxHead(self.num_anchor, wd=self.wd, name=f'BboxHead_{i}')
                      for i, _ in enumerate(features)]
-        self.bboxheads = nn.LayerList(bboxheads)
+        self.bboxheads = nn.ModuleList(bboxheads)
 
         landmarkheads = [LandmarkHead(self.num_anchor, wd=self.wd, name=f'LandmarkHead_{i}')
                          for i, _ in enumerate(features)]
-        self.landmarkheads = nn.LayerList(landmarkheads)
+        self.landmarkheads = nn.ModuleList(landmarkheads)
 
         classheads = [ClassHead(self.num_anchor, wd=self.wd, name=f'ClassHead_{i}')
                       for i, _ in enumerate(features)]
-        self.classheads = nn.LayerList(classheads)
+        self.classheads = nn.ModuleList(classheads)
 
         self.build(inputs_shape=[2, input_size, input_size, 3])
 

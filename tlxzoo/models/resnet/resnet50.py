@@ -85,7 +85,7 @@ class Stack(nn.Module):
         for i in range(2, blocks_num + 1):
             blocks.append(Block(filters, conv_shortcut=False, name=name + '_block' + str(i)))
 
-        self.blocks = nn.LayerList(blocks)
+        self.blocks = nn.ModuleList(blocks)
 
     def forward(self, inputs, extra_return_tensors_index=None, index=0, extra_return_tensors=None):
         if extra_return_tensors_index is not None and extra_return_tensors is None:
@@ -161,7 +161,7 @@ class ResNet50(nn.Module):
         self.relu = tlx.ReLU()
 
         if not preact:
-            self.conv1_bn = nn.BatchNorm(decay=0.99, epsilon=1.001e-5, name='conv1_bn')
+            self.conv1_bn = nn.BatchNorm(0.99, epsilon=1.001e-5, name='conv1_bn')
 
         self.pool1_pad = tlx.ZeroPadding2D(padding=((1, 1), (1, 1)))
         self.pool1_pool = tlx.nn.MaxPool2d(kernel_size=(3, 3), padding="valid",
@@ -172,7 +172,7 @@ class ResNet50(nn.Module):
                   Stack(256, 6, name="conv4"),
                   Stack(512, 3, name="conv5"),
                   ]
-        self.stacks = nn.LayerList(stacks)
+        self.stacks = nn.ModuleList(stacks)
 
         if preact:
             self.post_bn = nn.BatchNorm(epsilon=1.001e-5, name='post_bn')

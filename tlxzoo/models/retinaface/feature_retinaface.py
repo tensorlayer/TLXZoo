@@ -72,7 +72,8 @@ class RetinaFaceFeature(BaseImageFeature):
 
     def decode_one(self, bbox_regressions, landm_regressions, classifications, inputs, pad_params,
                    iou_th=0.4, score_th=0.02):
-        pad_params = [int(i.numpy()) for i in pad_params]
+        if not isinstance(pad_params[0], int):
+            pad_params = [int(i.numpy()) for i in pad_params]
         bbox_regressions_np = tlx.convert_to_numpy(bbox_regressions)
         landm_regressions_np = tlx.convert_to_numpy(landm_regressions)
         classifications_np = tlx.convert_to_numpy(classifications)
@@ -118,12 +119,15 @@ class RetinaFaceFeature(BaseImageFeature):
             return img, labels
         else:
             img, pad_params = pad_input_image(img, max_steps=self.config.max_steps)
-            labels = label.astype(np.float32)
 
-            labels = encode(labels=labels, priors=self.priors,
-                            match_thresh=self.config.match_thresh,
-                            ignore_thresh=self.config.ignore_thresh,
-                            variances=self.config.variances)
+            if label is not None:
+                labels = label.astype(np.float32)
+                labels = encode(labels=labels, priors=self.priors,
+                                match_thresh=self.config.match_thresh,
+                                ignore_thresh=self.config.ignore_thresh,
+                                variances=self.config.variances)
+            else:
+                labels = label
             return img, (labels, pad_params, image_path)
 
 
@@ -389,7 +393,7 @@ def _encode_landm(matched, priors, variances):
     return g_cxcy
 
 
-def draw_bbox_landm(img, ann, img_height, img_width):
+def draw_bbox_landm(img, ann, img_height, img_width, index=None):
     """draw bboxes and landmarks"""
     # bbox
     x1, y1, x2, y2 = int(ann[0] * img_width), int(ann[1] * img_height), \
@@ -398,8 +402,10 @@ def draw_bbox_landm(img, ann, img_height, img_width):
 
     # confidence
     text = "{:.4f}".format(ann[15])
+    if index:
+        text = str(index) + ":" + text
     cv2.putText(img, text, (int(ann[0] * img_width), int(ann[1] * img_height)),
-                cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+                cv2.FONT_HERSHEY_DUPLEX, 0.3, (255, 255, 255))
 
     # landmark
     if ann[14] > 0:

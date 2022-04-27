@@ -1,0 +1,30 @@
+{
+    "vocab_file": "./vocab.json",
+    "merges_file": "./merges.txt",
+    "errors": "replace",
+    "bos_token": "<s>",
+    "eos_token": "</s>",
+    "sep_token": "</s>",
+    "cls_token": "<s>",
+    "unk_token": "<unk>",
+    "pad_token": "<pad>",
+    "mask_token": "<mask>",
+    "max_length": 12,
+    "do_resize": true,
+    "size": 384,
+    "resample": 2,
+    "do_normalize": true,
+    "image_mean": [
+        0.5,
+        0.5,
+        0.5
+    ],
+    "image_std": [
+        0.5,
+        0.5,
+        0.5
+    ],
+    "feature_class": "TrOCRFeature",
+    "config_type": "feature",
+    "config_class": "TrOCRFeatureConfig"
+}
