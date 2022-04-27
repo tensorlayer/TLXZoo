@@ -1,0 +1,33 @@
+{
+    "input_size": 640,
+    "min_sizes": [
+        [
+            16,
+            32
+        ],
+        [
+            64,
+            128
+        ],
+        [
+            256,
+            512
+        ]
+    ],
+    "steps": [
+        8,
+        16,
+        32
+    ],
+    "clip": false,
+    "match_thresh": 0.45,
+    "ignore_thresh": 0.3,
+    "max_steps": 32,
+    "variances": [
+        0.1,
+        0.2
+    ],
+    "feature_class": "RetinaFaceFeature",
+    "config_type": "feature",
+    "config_class": "RetinaFaceFeatureConfig"
+}
