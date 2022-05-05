@@ -8,3 +8,4 @@ from .coco import *
 from .iam import *
 from .synth90k import *
 from .wider import *
+from .circles import *

@@ -57,6 +57,30 @@ class ImageDetectionDataConfig(BaseDataConfig):
 
 
 @Registers.data_configs.register
+class ImageSegmentationDataConfig(BaseDataConfig):
+    task = BaseForImageSegmentation
+    schema = None
+
+    def __init__(self,
+                 per_device_train_batch_size=2,
+                 per_device_eval_batch_size=2,
+                 data_name="Circles",
+                 root_path="",
+                 train_ann_path="",
+                 val_ann_path="",
+                 **kwargs):
+        self.per_device_train_batch_size = per_device_train_batch_size
+        self.per_device_eval_batch_size = per_device_eval_batch_size
+        self.data_name = data_name
+        self.task_type = self.task.task_type
+        self.root_path = root_path
+        self.train_ann_path = train_ann_path
+        self.val_ann_path = val_ann_path
+
+        super(ImageSegmentationDataConfig, self).__init__(**kwargs)
+
+
+@Registers.data_configs.register
 class HumanPoseEstimationDataConfig(BaseDataConfig):
     task = BaseForHumanPoseEstimation
     schema = None

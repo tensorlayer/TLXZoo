@@ -46,6 +46,16 @@ class BaseForObjectDetection(BaseTask):
 
 
 @Registers.tasks.register
+class BaseForImageSegmentation(BaseTask):
+    task_type = "image_segmentation"
+    def __call__(self, *args, return_output=True, **kwargs):
+        if return_output:
+            return super(BaseTask, self).__call__(*args, **kwargs)
+        else:
+            return super(BaseTask, self).__call__(*args, **kwargs).logits
+
+
+@Registers.tasks.register
 class BaseForConditionalGeneration(BaseTask):
     task_type = "conditional_generation"
 

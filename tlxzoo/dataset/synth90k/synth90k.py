@@ -42,7 +42,7 @@ class Synth90k(Dataset, BaseDataSetMixin):
 
 
 @Registers.datasets.register("synth90k")
-class IAMDataSetDict(BaseDataSetDict):
+class Synth90kDataSetDict(BaseDataSetDict):
     @classmethod
     def load(cls, train_limit=None, config=None):
 
