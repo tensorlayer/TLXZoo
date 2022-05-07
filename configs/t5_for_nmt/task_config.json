@@ -1,7 +1,0 @@
-{
-    "tie_word_embeddings": true,
-    "weights_path": "task.npz",
-    "model_config_path": "model_config.json",
-    "config_type": "task",
-    "config_class": "T5ForConditionalGenerationTaskConfig"
-}

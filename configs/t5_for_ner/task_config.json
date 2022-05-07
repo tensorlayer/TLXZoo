@@ -1,8 +1,0 @@
-{
-    "n_class": 9,
-    "initializer_factor": 1.0,
-    "weights_path": "task.npz",
-    "model_config_path": "model_config.json",
-    "config_type": "task",
-    "config_class": "T5ForTokenClassificationTaskConfig"
-}

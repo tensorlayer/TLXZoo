@@ -45,10 +45,4 @@ setup(
     keywords="tensorlayerx zoo",
     python_requires=">=3.5",
     install_requires=install_requires,
-    packages=find_packages(exclude=["bin"]),
-    entry_points={
-        "console_scripts": [
-            "tlxzoo=tlxzoo.bin.main:main",
-        ],
-    },
 )

@@ -1,4 +1,1 @@
-tensorlayerx
-schema
-sacrebleu
-pycocotools
+tensorlayerx==0.5.1

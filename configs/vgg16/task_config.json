@@ -1,8 +1,0 @@
-{
-    "num_labels": 10,
-    "weights_path": "task.npz",
-    "model_config_path": "model_config.json",
-    "task_class": "VGGForImageClassification",
-    "config_type": "task",
-    "config_class": "VGGForImageClassificationTaskConfig"
-}
