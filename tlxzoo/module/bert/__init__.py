@@ -1,2 +1,2 @@
-from .t5 import *
+from .bert import *
 from .transform import *

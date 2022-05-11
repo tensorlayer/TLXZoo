@@ -1,6 +1,7 @@
 from tensorlayerx import logging
 from tensorlayerx.dataflow import Dataset, IterableDataset
 import tensorlayerx as tlx
+from ..utils.registry import Registers
 
 
 class BaseDataSetMixin:
@@ -65,3 +66,12 @@ class BaseDataSetDict(dict):
     @classmethod
     def load(cls):
         ...
+
+
+@Registers.datasets.register("Text2Text")
+class Text2TextDataSetDict(BaseDataSetDict):
+    @classmethod
+    def load(cls, source_train_path, target_train_path, source_dev_path, target_dev_path, train_limit=None):
+        return cls({"train": FileDataSet(source_train_path, target_train_path, limit=train_limit),
+                    "test": FileDataSet(source_dev_path, target_dev_path)})
+

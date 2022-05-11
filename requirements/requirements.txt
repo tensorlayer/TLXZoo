@@ -1,1 +1,6 @@
 tensorlayerx==0.5.1
+SoundFile
+sentencepiece
+sacrebleu
+rouge_score
+pycocotools
