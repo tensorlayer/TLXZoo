@@ -22,6 +22,34 @@ class T5Model(tlx.nn.Module):
                  eos_token_id=1,
                  decoder_start_token_id=0,
                  name="t5", **kwargs):
+        """
+        :param vocab_size: (:obj:`int`, `optional`, defaults to 32128):
+            Vocabulary size of the T5 model.
+        :param d_model: (:obj:`int`, `optional`, defaults to 512):
+            Size of the encoder layers and the pooler layer.
+        :param d_kv: (:obj:`int`, `optional`, defaults to 64):
+            Size of the key, query, value projections per attention head.
+        :param d_ff: (:obj:`int`, `optional`, defaults to 2048):
+            Size of the intermediate feed forward layer.
+        :param num_layers: (:obj:`int`, `optional`, defaults to 6):
+            Number of hidden layers in the Transformer encoder.
+        :param num_decoder_layers: (:obj:`int`, `optional`):
+            Number of hidden layers in the Transformer decoder.
+        :param num_heads: (:obj:`int`, `optional`, defaults to 8):
+            Number of attention heads for each attention layer in the Transformer encoder.
+        :param relative_attention_num_buckets: (:obj:`int`, `optional`, defaults to 32):
+            The number of buckets to use for each attention layer.
+        :param dropout_rate: (:obj:`float`, `optional`, defaults to 0.1):
+            The ratio for all dropout layers.
+        :param layer_norm_epsilon: (:obj:`float`, `optional`, defaults to 1e-6):
+            The epsilon used by the layer normalization layers.
+        :param initializer_factor: (:obj:`float`, `optional`, defaults to 1):
+            A factor for initializing all weight matrices .
+        :param feed_forward_proj: (:obj:`string`, `optional`, defaults to :obj:`"relu"`):
+            Type of feed forward layer to be used.
+        :param use_cache: (:obj:`bool`, `optional`, defaults to :obj:`True`):
+            Whether or not the model should return the last key/values attentions.
+        """
         super(T5Model, self).__init__(name=name)
 
         self.vocab_size = vocab_size

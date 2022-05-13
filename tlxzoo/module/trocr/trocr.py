@@ -40,6 +40,56 @@ class TrOCR(tlx.nn.Module):
                  bos_token_id=0,
                  eos_token_id=2,
                  *inputs, **kwargs):
+        """
+        :param hidden_size: (:obj:`int`, `optional`, defaults to 768):
+            Dimensionality of the encoder(vit) layers and the pooler layer.
+        :param num_hidden_layers: (:obj:`int`, `optional`, defaults to 12):
+            Number of hidden layers in the vit encoder.
+        :param num_attention_heads: (:obj:`int`, `optional`, defaults to 12):
+            Number of attention heads for each attention layer in the vit encoder.
+        :param intermediate_size: (:obj:`int`, `optional`, defaults to 3072):
+            Dimensionality of the "intermediate" (i.e., feed-forward) layer in the vit encoder.
+        :param hidden_act: (:obj:`str`, defaults to :obj:`"gelu"`):
+            The non-linear activation function (function or string) in the vit encoder and pooler.
+        :param hidden_dropout_prob: (:obj:`float`, `optional`, defaults to 0.1):
+            The dropout probabilitiy for all fully connected layers in the embeddings, vit encoder, and pooler.
+        :param attention_probs_dropout_prob: (:obj:`float`, `optional`, defaults to 0.1):
+            The dropout ratio for the encoder attention probabilities.
+        :param initializer_range: (:obj:`float`, `optional`, defaults to 0.02):
+            The standard deviation of the truncated_normal_initializer for encoder initializing all weight matrices.
+        :param layer_norm_eps: (:obj:`float`, `optional`, defaults to 1e-12):
+            The epsilon used by the encoder layer normalization layers.
+        :param image_size: (:obj:`int`, `optional`, defaults to :obj:`224`):
+            The size (resolution) of each image.
+        :param patch_size: (:obj:`int`, `optional`, defaults to :obj:`16`):
+            The size (resolution) of each patch.
+        :param num_channels: (:obj:`int`, `optional`, defaults to :obj:`3`):
+            The number of input channels.
+        :param qkv_bias: (:obj:`bool`, `optional`, defaults to :obj:`True`):
+            Whether to add a bias to the queries, keys and values.
+        :param vocab_size: (:obj:`int`, `optional`, defaults to 50265):
+            Vocabulary size of the TrOCR model.
+        :param d_model: (:obj:`int`, `optional`, defaults to 1024):
+            Dimensionality of the layers and the pooler layer.
+        :param decoder_layers: (:obj:`int`, `optional`, defaults to 12):
+            Number of decoder layers.
+        :param decoder_attention_heads: (:obj:`int`, `optional`, defaults to 16):
+            Number of attention heads for each attention layer in the Transformer decoder.
+        :param decoder_ffn_dim: (:obj:`int`, `optional`, defaults to 4096):
+            Dimensionality of the "intermediate" (often named feed-forward) layer in decoder.
+        :param activation_function: (:obj:`str`, defaults to :obj:`"gelu"`):
+            The non-linear activation function (function or string) in the pooler. If string, :obj:`"gelu"`,
+            :obj:`"relu"`, :obj:`"silu"` and :obj:`"gelu_new"` are supported.
+        :param max_position_embeddings: (:obj:`int`, `optional`, defaults to 512):
+            The maximum sequence length that this model might ever be used with. Typically set this to something large
+            just in case (e.g., 512 or 1024 or 2048).
+        :param dropout: (:obj:`float`, `optional`, defaults to 0.1):
+            The dropout probability for all fully connected layers in the embeddings, and pooler.
+        :param attention_dropout: (:obj:`float`, `optional`, defaults to 0.0):
+            The dropout ratio for the attention probabilities.
+        :param activation_dropout: (:obj:`float`, `optional`, defaults to 0.0):
+            The dropout ratio for activations inside the fully connected layer.
+        """
         super().__init__(*inputs, **kwargs)
 
         self.vit = ViTModel(image_size, patch_size, num_channels, hidden_size, initializer_range, hidden_dropout_prob,

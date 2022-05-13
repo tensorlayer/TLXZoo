@@ -29,6 +29,41 @@ class Detr(nn.Module):
                  eos_coefficient=0.1,
                  auxiliary_loss=True,
                  name="detr", **kwargs):
+        """
+        :param num_queries: (:obj:`int`, `optional`, defaults to 100):
+            Number of object queries, i.e. detection slots. This is the maximal number of objects
+        :param num_encoder_layers: (:obj:`int`, `optional`, defaults to 6):
+            Number of decoder layers.
+        :param num_decoder_layers: (:obj:`int`, `optional`, defaults to 6):
+            Number of encoder layers.
+        :param model_dim: (:obj:`int`, `optional`, defaults to 256):
+            Dimension of the layers.
+        :param backbone_bn_shape: resnet bn shape
+        :param backbone_layer1_bn_shape: resnet layer1 bn shape
+        :param backbone_layer2_bn_shape: resnet layer2 bn shape
+        :param backbone_layer3_bn_shape: resnet layer3 bn shape
+        :param backbone_layer4_bn_shape: resnet layer4 bn shape
+        :param return_intermediate_dec:
+        :param num_classes: num of object classes + 1
+        :param class_cost: (:obj:`float`, `optional`, defaults to 1):
+            Relative weight of the classification error in the Hungarian matching cost.
+        :param bbox_cost: (:obj:`float`, `optional`, defaults to 5):
+            Relative weight of the L1 error of the bounding box coordinates in the Hungarian matching cost.
+        :param giou_cost: (:obj:`float`, `optional`, defaults to 2):
+            Relative weight of the generalized IoU loss of the bounding box in the Hungarian matching cost.
+        :param num_labels: num of object classes
+        :param dice_loss_coefficient: (:obj:`float`, `optional`, defaults to 1):
+            Relative weight of the DICE/F-1 loss in the panoptic segmentation loss.
+        :param bbox_loss_coefficient: (:obj:`float`, `optional`, defaults to 5):
+            Relative weight of the L1 bounding box loss in the object detection loss.
+        :param giou_loss_coefficient: (:obj:`float`, `optional`, defaults to 2):
+            Relative weight of the generalized IoU loss in the object detection loss.
+        :param eos_coefficient: (:obj:`float`, `optional`, defaults to 0.1):
+            Relative classification weight of the 'no-object' class in the object detection loss.
+        :param auxiliary_loss: (:obj:`bool`, `optional`, defaults to :obj:`False`):
+            Whether auxiliary decoding losses (loss at each decoder layer) are to be used.
+        :param name:
+        """
         super(Detr, self).__init__(name=name, **kwargs)
         self.num_queries = num_queries
         self.num_encoder_layers = num_encoder_layers

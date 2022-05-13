@@ -251,6 +251,18 @@ class YOLOv4(tlx.nn.Module):
                  iou_loss_thresh=0.5,
                  train_input_size=416,
                  ):
+        """
+        :param num_labels: (:obj:`int`, `optional`, defaults to 80):
+            Num of labels.
+        :param strides: (:obj:`Tuple[int]`, `optional`, defaults to :obj:`(8, 16, 32)`):
+            A tuple of integers defining the stride of each convolutional layer in the feature extractor.
+        :param anchors: (:obj:`Tuple[int]`, `optional`, defaults to :obj:`(12, 16, 19, 36, 40, 28, 36, 75, 76, 55, 72, 146, 142, 110, 192, 243, 459, 401)`):
+            A tuple of integers defining the anchor.
+        :param xyscale: (:obj:`Tuple[float]`, `optional`, defaults to :obj:`(1.2, 1.1, 1.05)`):
+            A tuple of integers defining the xy scale.
+        :param iou_loss_thresh: (:obj:`float`, `optional`, defaults to 0.5):
+            Thresh for computing iou loss.
+        """
         super(YOLOv4, self).__init__()
         self.conv1_1_filters_shape = conv1_1_filters_shape
         self.conv1_2_filters_shape = conv1_2_filters_shape

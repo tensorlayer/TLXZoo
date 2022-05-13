@@ -106,8 +106,32 @@ def _get_kernel_initializer(filters, kernel_size):
 
 
 class Unet(nn.Module):
-    def __init__(self, nx, ny, channels, num_classes, layer_depth, filters_root, kernel_size=3,
+    def __init__(self, nx=172, ny=172, channels=1, num_classes=2, layer_depth=3, filters_root=64, kernel_size=3,
                  pool_size=2, dropout_rate=0.5, padding="valid", activation="relu", name="unet"):
+        """
+        :param nx: (:obj:`int`, defaults to 172):
+            (Optional) image size on x-axis
+        :param ny: (:obj:`int`, defaults to 172):
+            (Optional) image size on y-axis
+        :param channels: (:obj:`int`, defaults to 1):
+            number of channels of the input tensors
+        :param num_classes: (:obj:`int`, defaults to 2):
+            number of classes
+        :param layer_depth: (:obj:`int`, defaults to 3):
+            total depth of unet
+        :param filters_root: (:obj:`int`, defaults to 64):
+            number of filters in top unet layer
+        :param kernel_size: (:obj:`int`, defaults to 3):
+            size of convolutional layers
+        :param pool_size: (:obj:`int`, defaults to 2):
+            size of maxplool layers
+        :param dropout_rate: (:obj:`float`, `optional`, defaults to 0.5):
+            The dropout ratio for the layer.
+        :param padding: (:obj:`str`, `optional`, defaults to valid):
+            padding to be used in convolutions
+        :param activation:(:obj:`str`, `optional`, defaults to :obj:`"relu"`):
+            The non-linear activation function.
+        """
         super(Unet, self).__init__(name=name)
 
         conv_params = dict(filters_root=filters_root,

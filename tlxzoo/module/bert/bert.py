@@ -693,6 +693,31 @@ class Bert(tlx.nn.Module):
                  is_decoder=False,
                  add_pooling_layer=True,
                  *inputs, **kwargs):
+        """
+        :param vocab_size: (:obj:`int`, `optional`, defaults to 30522):
+            Vocabulary size of the BERT model.
+        :param hidden_size: (:obj:`int`, `optional`, defaults to 768):
+            Dimensionality of the encoder layers and the pooler layer.
+        :param num_hidden_layers: (:obj:`int`, `optional`, defaults to 12):
+            Number of hidden layers in the Transformer encoder.
+        :param num_attention_heads: (:obj:`int`, `optional`, defaults to 12):
+            Number of attention heads for each attention layer in the Transformer encoder.
+        :param intermediate_size: (:obj:`int`, `optional`, defaults to 3072):
+            Dimensionality of the "intermediate" (often named feed-forward) layer in the Transformer encoder.
+        :param hidden_act: (:obj:`str`, `optional`, defaults to :obj:`"gelu"`):
+            The non-linear activation function in the encoder and pooler.
+        :param hidden_dropout_prob: (:obj:`float`, `optional`, defaults to 0.1):
+            The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.
+        :param attention_probs_dropout_prob: (:obj:`float`, `optional`, defaults to 0.1):
+            The dropout ratio for the attention probabilities.
+        :param max_position_embeddings: (:obj:`int`, `optional`, defaults to 512):
+            The maximum sequence length that this model might ever be used with. Typically set this to something large
+            just in case (e.g., 512 or 1024 or 2048).
+        :param initializer_range: (:obj:`float`, `optional`, defaults to 0.02):
+            The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
+        :param layer_norm_eps: (:obj:`float`, `optional`, defaults to 1e-12):
+            The epsilon used by the layer normalization layers.
+        """
         super().__init__(*inputs, **kwargs)
 
         self.bert = BertMainLayer(vocab_size, type_vocab_size, hidden_size, max_position_embeddings, initializer_range,

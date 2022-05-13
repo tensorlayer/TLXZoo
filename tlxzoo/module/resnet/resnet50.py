@@ -143,6 +143,16 @@ class Preprocess(nn.Module):
 class ResNet50(nn.Module):
     def __init__(self, input_shape, preact=False, use_bias=True, use_preprocess=True, include_top=False,
                  pooling=None, num_labels=1000, name="resnet50"):
+        """
+        :param input_shape: optional shape tuple, E.g. `(None, 200, 200, 3)` would be one valid value.
+        :param preact: whether to use pre-activation or not (True for ResNetV2, False for ResNet and ResNeXt).
+        :param use_bias: whether to use biases for convolutional layers or not (True for ResNet and ResNetV2, False for ResNeXt).
+        :param use_preprocess: whether use data preprocess in backbone.
+        :param include_top: whether to include the fully-connected layer at the top of the network.
+        :param pooling: optional pooling mode for feature extraction
+        :param num_labels: optional number of classes to classify images
+        :param name: module name
+        """
         super(ResNet50, self).__init__(name=name)
         self.preact = preact
 

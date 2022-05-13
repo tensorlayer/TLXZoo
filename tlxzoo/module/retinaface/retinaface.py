@@ -168,6 +168,20 @@ class ClassHead(nn.Module):
 class RetinaFace(nn.Module):
     def __init__(self, input_size=640, weights_decay=5e-4, out_channel=256,
                  min_sizes=None, iou_th=0.4, score_th=0.02, name='RetinaFace'):
+        """
+        :param input_size: (:obj:`int`, `optional`, defaults to 640):
+            input size for build model.
+        :param weights_decay: (:obj:`float`, `optional`, defaults to 5e-4):
+            weights decay of ConvUnit.
+        :param out_channel: (:obj:`int`, `optional`, defaults to 256):
+            out Dimensionality of SSH.
+        :param min_sizes: (:obj:`list`, `optional`, defaults to [[16, 32], [64, 128], [256, 512]]):
+            sizes for anchor.
+        :param iou_th: (:obj:`float`, `optional`, defaults to 0.4):
+            iou threshold
+        :param score_th: (:obj:`float`, `optional`, defaults to 0.02):
+            score threshold
+        """
         super(RetinaFace, self).__init__(name=name)
 
         min_sizes = min_sizes if min_sizes else [[16, 32], [64, 128], [256, 512]]

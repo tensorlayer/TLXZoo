@@ -73,6 +73,19 @@ model_saved_name = {'vgg16': 'vgg16_weights.npz', 'vgg19': 'vgg19.npy'}
 class VGG(Module):
 
     def __init__(self, layer_type, batch_norm=True, end_with='outputs', num_labels=1000, name=None):
+        """
+        VGG19 model
+        :param layer_type: str
+            One of vgg11,vgg13,vgg16,vgg19
+        :param batch_norm: boolean
+            Whether use batch norm
+        :param end_with: str
+            The end point of the model. Default ``fc3_relu`` i.e. the whole model.
+        :param num_labels: str
+            Number of classes to classify images
+        :param name: str
+            Module name
+        """
         super(VGG, self).__init__(name=name)
         self.end_with = end_with
 

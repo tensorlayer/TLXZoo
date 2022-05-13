@@ -66,6 +66,14 @@ class NormHead(nn.Module):
 
 class ArcFace(nn.Module):
     def __init__(self, size=None, embd_shape=512, channels=3, name='arcface'):
+        """
+        :param size: (:obj:`int`, `optional`):
+            input size for build model.
+        :param embd_shape: (:obj:`int`, `optional`, defaults to 512):
+            Number of hidden in the dense.
+        :param channels: (:obj:`int`, `optional`, defaults to 3):
+            channels for build model.
+        """
         super(ArcFace, self).__init__(name=name)
 
         self.backbone = ResNet50(None, use_preprocess=False)

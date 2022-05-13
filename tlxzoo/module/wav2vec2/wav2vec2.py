@@ -29,9 +29,6 @@ def _sample_without_replacement(distribution, num_samples):
 
 
 def _scatter_values_on_batch_indices(values, batch_indices, output_shape):
-    """
-    Scatter function as in PyTorch with indices in format (batch_dim, indixes)
-    """
     indices_shape = shape_list(batch_indices)
     # broadcast batch dim to indices_shape
     casted_batch_dims = tlx.expand_dims(tlx.arange(indices_shape[0]), axis=-1)
@@ -891,8 +888,6 @@ class Wav2Vec2MainLayer(Module):
         """
 
         def _conv_out_length(input_length, kernel_size, stride):
-            # 1D convolutional layer output length formula taken
-            # from https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html
             return (input_length - kernel_size) // stride + 1
 
         for kernel_size, stride in zip(self.config.conv_kernel, self.config.conv_stride):
@@ -1041,6 +1036,90 @@ class Wav2Vec2(tlx.nn.Module):
                  ctc_loss_reduction="sum",
                  ctc_zero_infinity=False,
                  name="wav2vec2", *inputs, **kwargs):
+        """
+        :param hidden_size: (:obj:`int`, `optional`, defaults to 768):
+            Dimensionality of the encoder layers and the pooler layer.
+        :param num_hidden_layers: (:obj:`int`, `optional`, defaults to 12):
+            Number of hidden layers in the Transformer encoder.
+        :param num_attention_heads: (:obj:`int`, `optional`, defaults to 12):
+            Number of attention heads for each attention layer in the Transformer encoder.
+        :param intermediate_size: (:obj:`int`, `optional`, defaults to 3072):
+            Dimensionality of the "intermediate" (i.e., feed-forward) layer in the Transformer encoder.
+        :param hidden_act: (:obj:`str`, defaults to :obj:`"gelu"`):
+            The non-linear activation function (function or string) in the encoder and pooler.
+        :param hidden_dropout:  (:obj:`float`, `optional`, defaults to 0.1):
+            The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.
+        :param activation_dropout: (:obj:`float`, `optional`, defaults to 0.1):
+            The dropout ratio for the activation probabilities.
+        :param attention_dropout: (:obj:`float`, `optional`, defaults to 0.1):
+            The dropout ratio for the attention probabilities.
+        :param feat_proj_dropout: (:obj:`float`, `optional`, defaults to 0.1):
+            The dropout ratio for the feature extractor probabilities.
+        :param feat_quantizer_dropout: (:obj:`float`, `optional`, defaults to 0.0):
+            The dropout ratio for quantized feature extractor states.
+        :param initializer_range: (:obj:`float`, `optional`, defaults to 0.02):
+            The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
+        :param layer_norm_eps: (:obj:`float`, `optional`, defaults to 1e-12):
+            The epsilon used by the layer normalization layers.
+        :param feat_extract_norm: str
+            The norm to be applied to 1D convolutional layers in feature extractor.
+        :param feat_extract_activation: (:obj:`str, `optional`, defaults to :obj:`"gelu"`):
+            The non-linear activation function (function or string) in the 1D convolutional layers of the feature
+            extractor.
+        :param conv_dim: (:obj:`Tuple[int]`, `optional`, defaults to :obj:`(512, 512, 512, 512, 512, 512, 512)`):
+            A tuple of integers defining the number of input and output channels of each 1D convolutional layer in the
+            feature extractor.
+        :param conv_stride: (:obj:`Tuple[int]`, `optional`, defaults to :obj:`(5, 2, 2, 2, 2, 2, 2)`):
+            A tuple of integers defining the stride of each 1D convolutional layer in the feature extractor. The length
+            of `conv_stride` defines the number of convolutional layers and has to match the the length of `conv_dim`.
+        :param conv_kernel: (:obj:`Tuple[int]`, `optional`, defaults to :obj:`(10, 3, 3, 3, 3, 3, 3)`):
+            A tuple of integers defining the kernel size of each 1D convolutional layer in the feature extractor. The
+            length of `conv_kernel` defines the number of convolutional layers and has to match the the length of
+            `conv_dim`.
+        :param conv_bias: (:obj:`bool`, `optional`, defaults to :obj:`False`):
+            Whether the 1D convolutional layers have a bias.
+        :param num_conv_pos_embeddings: (:obj:`int`, `optional`, defaults to 128):
+            Number of convolutional positional embeddings. Defines the kernel size of 1D convolutional positional
+            embeddings layer.
+        :param num_conv_pos_embedding_groups: (:obj:`int`, `optional`, defaults to 16):
+            Number of groups of 1D convolutional positional embeddings layer.
+        :param do_stable_layer_norm: (:obj:`bool`, `optional`, defaults to :obj:`False`):
+            Whether to apply `stable` layer norm architecture of the Transformer encoder. ``do_stable_layer_norm is
+            True`` corresponds to applying layer norm before the attention layer, whereas ``do_stable_layer_norm is
+            False`` corresponds to applying layer norm after the attention layer.
+        :param apply_spec_augment: (:obj:`bool`, `optional`, defaults to :obj:`True`):
+            Whether to apply *SpecAugment* data augmentation to the outputs of the feature extractor.
+        :param mask_time_prob: (:obj:`float`, `optional`, defaults to 0.05):
+            Propability of each feature vector along the time axis to be chosen as the start of the vector span to be
+            masked.
+        :param mask_time_length: (:obj:`int`, `optional`, defaults to 10):
+            Length of vector span along the time axis.
+        :param mask_feature_prob: (:obj:`float`, `optional`, defaults to 0.0):
+            Propability of each feature vector along the feature axis to be chosen as the start of the vector span to
+            be masked.
+        :param mask_feature_length: (:obj:`int`, `optional`, defaults to 10):
+            Length of vector span along the feature axis.
+        :param num_codevectors_per_group: (:obj:`int`, `optional`, defaults to 320):
+            Number of entries in each quantization codebook (group).
+        :param num_codevector_groups: (:obj:`int`, `optional`, defaults to 2):
+            Number of codevector groups for product codevector quantization.
+        :param contrastive_logits_temperature: (:obj:`float`, `optional`, defaults to 0.1):
+            The temperature `kappa` in the contrastive loss.
+        :param num_negatives: (:obj:`int`, `optional`, defaults to 100):
+            Number of negative samples for the contrastive loss.
+        :param codevector_dim: (:obj:`int`, `optional`, defaults to 256):
+            Dimensionality of the quantized feature vectors.
+        :param proj_codevector_dim: (:obj:`int`, `optional`, defaults to 256):
+            Dimensionality of the final projection of both the quantized and the transformer features.
+        :param vocab_size: (:obj:`int`, `optional`, defaults to 32):
+            Vocabulary size of the Wav2Vec2 model.
+        :param diversity_loss_weight: (:obj:`int`, `optional`, defaults to 0.1):
+            The weight of the codebook diversity loss component.
+        :param ctc_loss_reduction: (:obj:`str`, `optional`, defaults to :obj:`"sum"`):
+            Specifies the reduction to apply to the output of ctcloss.
+        :param ctc_zero_infinity: (:obj:`bool`, `optional`, defaults to :obj:`False`):
+            Whether to zero infinite losses and the associated gradients of ctcloss.
+        """
         super().__init__(name=name, *inputs, **kwargs)
 
         num_feat_extract_layers = len(conv_dim)
