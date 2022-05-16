@@ -485,8 +485,8 @@ def get_max_preds(heatmap_tensor):
 
 
 class PCK(object):
-    def __init__(self):
-        self.threshold = 0.5
+    def __init__(self, threshold=0.5):
+        self.threshold = threshold
 
     def __call__(self, network_output, target):
         _, h, w, c = network_output.shape

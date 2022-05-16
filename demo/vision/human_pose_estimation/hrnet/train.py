@@ -39,7 +39,7 @@ class Trainer(tlx.model.Model):
                 with tf.GradientTape() as tape:
                     # compute outputs
                     _logits = network(X_batch)
-                    _loss_ce = loss_fn(_logits, y_batch["target"][0], y_batch["target"][1])
+                    _loss_ce = loss_fn(_logits, target=y_batch["target"][0], target_weight=y_batch["target"][1])
 
                 grad = tape.gradient(_loss_ce, train_weights)
 
@@ -55,7 +55,7 @@ class Trainer(tlx.model.Model):
                     print("Epoch {} of {} {} took {}".format(epoch + 1, n_epoch, n_iter, time.time() - start_time))
                     print("   train loss: {}".format(train_loss / n_iter))
                     print("   train acc: {}".format(train_acc / n_iter))
-                    print("   learning rate: ", optimizer.learning_rate())
+                    print("   learning rate: ", optimizer.lr())
 
             if epoch + 1 == 1 or (epoch + 1) % print_freq == 0:
                 print("Epoch {} of {} took {}".format(epoch + 1, n_epoch, time.time() - start_time))
@@ -66,7 +66,7 @@ class Trainer(tlx.model.Model):
                 valid(network, test_dataset)
                 model.save_weights("./demo/vision/human_pose_estimation/hrnet/model.npz")
 
-            optimizer.learning_rate.step()
+            optimizer.lr.step()
 
 
 class EpochDecay(LRScheduler):
@@ -74,16 +74,14 @@ class EpochDecay(LRScheduler):
         super(EpochDecay, self).__init__(learning_rate, last_epoch, verbose)
 
     def get_lr(self):
-        if int(self.last_epoch) >= 150:
-            return self.base_lr * 0.0001
-
-        if int(self.last_epoch) >= 120:
-            return self.base_lr * 0.001
 
         if int(self.last_epoch) >= 80:
+            return self.base_lr * 0.001
+
+        if int(self.last_epoch) >= 50:
             return self.base_lr * 0.01
 
-        if int(self.last_epoch) >= 30:
+        if int(self.last_epoch) >= 4:
             return self.base_lr * 0.1
 
         return self.base_lr
@@ -103,11 +101,12 @@ if __name__ == '__main__':
 
     model = HumanPoseEstimation("hrnet")
 
-    scheduler = EpochDecay(1e-1)
+    scheduler = EpochDecay(1e-2)
     optimizer = tlx.optimizers.Adam(lr=scheduler)
+    # optimizer = tlx.optimizers.SGD(lr=scheduler)
 
     trainer = Trainer(network=model, loss_fn=model.loss_fn, optimizer=optimizer, metrics=None)
-    trainer.train(n_epoch=160, train_dataset=datasets.train, test_dataset=datasets.test, print_freq=1,
+    trainer.train(n_epoch=100, train_dataset=datasets.train, test_dataset=datasets.test, print_freq=1,
                   print_train_batch=True)
 
     model.save_weights("./demo/vision/human_pose_estimation/hrnet/model.npz")

@@ -94,9 +94,10 @@ def inference(image_tensor, model, image_dir, original_image_size):
     keypoints_y = batch_y_list[0]
     image = draw_on_image(image=cv2.imread(image_dir), x=keypoints_x, y=keypoints_y, rescale=keypoints_rescale)
 
-    cv2.namedWindow("Pose Estimation", flags=cv2.WINDOW_NORMAL)
-    cv2.imshow("Pose Estimation", image)
-    cv2.waitKey(0)
+    # cv2.namedWindow("Pose Estimation", flags=cv2.WINDOW_NORMAL)
+    # cv2.imshow("Pose Estimation", image)
+    # cv2.waitKey(0)
+    cv2.imwrite("image.png", image)
 
 
 class KeypointsRescaleToOriginal(object):
