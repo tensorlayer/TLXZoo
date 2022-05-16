@@ -70,30 +70,27 @@ class Trainer(tlx.model.Model):
 
 
 class EpochDecay(LRScheduler):
-    def __init__(self, learning_rate, last_epoch=-1, verbose=False):
+    def __init__(self, learning_rate, last_epoch=0, verbose=False):
         super(EpochDecay, self).__init__(learning_rate, last_epoch, verbose)
 
     def get_lr(self):
 
-        if int(self.last_epoch) >= 60:
-            return self.base_lr * 0.001
-
-        if int(self.last_epoch) >= 30:
+        if int(self.last_epoch) >= 65:
             return self.base_lr * 0.01
 
-        if int(self.last_epoch) >= 4:
+        if int(self.last_epoch) >= 40:
             return self.base_lr * 0.1
 
         return self.base_lr
 
 
 if __name__ == '__main__':
-    datasets = DataLoaders(root_path="/home/xiaolong-xu/adhub/coco2017/0.1",
+    datasets = DataLoaders(root_path="./",
                            per_device_eval_batch_size=14,
                            per_device_train_batch_size=14,
                            data_name="Coco",
-                           train_ann_path="/home/xiaolong-xu/adhub/coco2017/0.1/annotations/person_keypoints_train2017.json",
-                           val_ann_path="/home/xiaolong-xu/adhub/coco2017/0.1/annotations/person_keypoints_val2017.json",
+                           train_ann_path="./annotations/person_keypoints_train2017.json",
+                           val_ann_path="./annotations/person_keypoints_val2017.json",
                            num_workers=4)
 
     transform = HRNetTransform()
@@ -101,7 +98,7 @@ if __name__ == '__main__':
 
     model = HumanPoseEstimation("hrnet")
 
-    scheduler = EpochDecay(1e-2)
+    scheduler = EpochDecay(1e-3)
     optimizer = tlx.optimizers.Adam(lr=scheduler)
     # optimizer = tlx.optimizers.SGD(lr=scheduler)
 
