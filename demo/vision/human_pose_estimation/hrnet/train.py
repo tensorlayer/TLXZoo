@@ -75,10 +75,10 @@ class EpochDecay(LRScheduler):
 
     def get_lr(self):
 
-        if int(self.last_epoch) >= 65:
+        if int(self.last_epoch) >= 40:
             return self.base_lr * 0.01
 
-        if int(self.last_epoch) >= 40:
+        if int(self.last_epoch) >= 30:
             return self.base_lr * 0.1
 
         return self.base_lr
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     # optimizer = tlx.optimizers.SGD(lr=scheduler)
 
     trainer = Trainer(network=model, loss_fn=model.loss_fn, optimizer=optimizer, metrics=None)
-    trainer.train(n_epoch=80, train_dataset=datasets.train, test_dataset=datasets.test, print_freq=1,
+    trainer.train(n_epoch=50, train_dataset=datasets.train, test_dataset=datasets.test, print_freq=1,
                   print_train_batch=True)
 
     model.save_weights("./demo/vision/human_pose_estimation/hrnet/model.npz")
