@@ -12,7 +12,7 @@ if __name__ == '__main__':
     model.load_weights("./demo/vision/human_pose_estimation/hrnet/model.npz")
     model.set_eval()
 
-    path = "./demo/vision/human_pose_estimation/hrnet/hrnet.jpg"
+    path = "./coco2017/0.1/val2017/000000527784.jpg"
     image = Image.open(path).convert('RGB')
     image_height, image_width = image.height, image.width
     image = np.array(image, dtype=np.float32)

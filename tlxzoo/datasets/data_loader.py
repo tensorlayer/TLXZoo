@@ -6,7 +6,7 @@ import copy
 
 class DataLoaders(object):
     def __init__(self, data_name, train_limit=None, collate_fn=None, transform_hook=None, transform_hook_index=None,
-                 num_workers=2, per_device_train_batch_size=2, per_device_eval_batch_size=2, **kwargs):
+                 num_workers=0, per_device_train_batch_size=2, per_device_eval_batch_size=2, **kwargs):
         self.dataset_dict = Registers.datasets[data_name].load(train_limit=train_limit, **kwargs)
 
         if "train" in self.dataset_dict:
@@ -68,7 +68,7 @@ class DataLoaders(object):
             transform_hook.set_eval()
             self.dataset_dict["test"].register_transform_hook(transform_hook, index=index)
 
-    def dataset_dataloader(self, dataset, dataset_type="train", num_workers=8, collate_fn=None,
+    def dataset_dataloader(self, dataset, dataset_type="train", num_workers=0, collate_fn=None,
                            per_device_train_batch_size=2, per_device_eval_batch_size=2):
 
         if dataset_type == "train":

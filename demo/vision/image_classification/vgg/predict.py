@@ -22,7 +22,7 @@ if __name__ == '__main__':
     model.load_weights("./demo/vision/image_classification/vgg/model.npz")
     model.set_eval()
 
-    image = cv2.imread("dog.png")
+    image = cv2.imread("./demo/vision/image_classification/vgg/dog.png")
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = cv2.resize(image, (32, 32))
 

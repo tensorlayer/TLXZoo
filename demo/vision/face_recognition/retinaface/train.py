@@ -89,7 +89,7 @@ if __name__ == '__main__':
                         root_path="./wider/widerface",
                         train_ann_path="label.txt",
                         val_ann_path="label.txt",
-                        num_workers=2,
+                        num_workers=0,
                         )
     transform = RetinaFaceTransform()
     wider.register_transform_hook(transform)

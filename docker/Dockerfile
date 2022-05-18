@@ -8,6 +8,7 @@ RUN pip install pandas
 RUN pip install jupyterlab
 RUN pip install opencv-python
 RUN pip install SoundFile
+RUN apt-get install libsndfile1
 RUN pip install sentencepiece
 RUN pip install sacrebleu
 RUN pip install rouge_score
