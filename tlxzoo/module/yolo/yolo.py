@@ -7,7 +7,7 @@ from ...utils.registry import Registers
 import tensorlayerx as tlx
 from tensorlayerx.nn import Mish
 from tensorlayerx.nn import Conv2d, MaxPool2d, BatchNorm2d, ZeroPad2d, UpSampling2d, Concat, Elementwise
-from tensorlayerx.nn import Module, SequentialLayer
+from tensorlayerx.nn import Module, Sequential
 from tensorlayerx import logging
 import numpy as np
 
@@ -87,7 +87,7 @@ def residual_block_num(num, input_channel, filter_num1, filter_num2, activate_ty
     residual_list = []
     for i in range(num):
         residual_list.append(ResidualBlock(input_channel, filter_num1, filter_num2, activate_type=activate_type))
-    return SequentialLayer(residual_list)
+    return Sequential(residual_list)
 
 
 class CspdarkNet53(Module):
@@ -241,7 +241,7 @@ class YOLOv4(tlx.nn.Module):
                  conv8_4_filters_shape=(3, 3, 512, 1024),
                  conv8_5_filters_shape=(1, 1, 1024, 512),
                  conv9_1_filters_shape=(3, 3, 512, 1024),
-                 num_labels=80,
+                 num_labels=91,
                  sconv_filters_shape=(1, 1, 256),
                  mconv_filters_shape=(1, 1, 512),
                  lconv_filters_shape=(1, 1, 1024),
@@ -464,7 +464,7 @@ def decode_train(conv_output, output_size, NUM_CLASS, STRIDES, ANCHORS, i, XYSCA
 
     conv_raw_dxdy, conv_raw_dwdh, conv_raw_conf, conv_raw_prob = tlx.split(conv_output, (2, 2, 1, NUM_CLASS), axis=-1)
 
-    xy_grid = tlx.meshgrid(tlx.range(output_size), tlx.range(output_size))
+    xy_grid = tlx.meshgrid(tlx.arange(output_size), tlx.arange(output_size))
     xy_grid = tlx.expand_dims(tlx.stack(xy_grid, axis=-1), axis=2)  # [gx, gy, 1, 2]
     xy_grid = tlx.tile(tlx.expand_dims(xy_grid, axis=0), [conv_output.shape[0], 1, 1, 3, 1])
 

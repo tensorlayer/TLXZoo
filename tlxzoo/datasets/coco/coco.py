@@ -52,7 +52,8 @@ class CocoDetection(Dataset, BaseDataSetMixin):
         id = self.ids[index]
         image = self._load_image(id)
         target = self._load_target(id)
-        target = {'image_id': id, 'annotations': target}
+        path = self.coco.loadImgs(id)[0]["file_name"]
+        target = {'image_id': id, 'annotations': target, "path": os.path.join(self.root, self.data_type, path)}
 
         image, target = self.transform(image, target)
 
