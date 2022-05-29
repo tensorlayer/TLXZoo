@@ -171,7 +171,6 @@ class T5Attention(Module):
         self.n_heads = num_heads
         self.inner_dim = self.n_heads * self.key_value_proj_dim
 
-        # Mesh TensorFlow initialization to avoid scaling before softmax
         q_initializer = tlx.initializers.RandomNormal(
             mean=0, stddev=initializer_factor * ((self.inner_dim * self.key_value_proj_dim) ** -0.5)
         )
@@ -225,8 +224,6 @@ class T5Attention(Module):
     @staticmethod
     def _relative_position_bucket(relative_position, bidirectional=True, num_buckets=32, max_distance=128):
         """
-        Adapted from Mesh Tensorflow:
-        https://github.com/tensorflow/mesh/blob/0cb87fe07da627bf0b7e60475d59f95ed6b5be3d/mesh_tensorflow/transformer/transformer_layers.py#L593
 
         Translate relative position to a bucket number for relative attention. The relative position is defined as
         memory_position - query_position, i.e. the distance in tokens from the attending position to the attended-to
@@ -244,7 +241,6 @@ class T5Attention(Module):
         Returns:
             a Tensor with the same shape as relative_position, containing int32 values in the range [0, num_buckets)
         """
-        import tensorflow as tf
         relative_buckets = 0
         #        n = -relative_position
         if bidirectional:
@@ -364,8 +360,8 @@ class T5Attention(Module):
         else:
             present_key_value_state = None
 
-        import tensorflow as tf
-        scores = tf.einsum(
+        from ..detr.utils import einsum
+        scores = einsum(
             "bnqd,bnkd->bnqk", query_states, key_states
         )  # (batch_size, n_heads, query_length, key_length)
 
@@ -701,7 +697,6 @@ class T5MainLayer(Module):
         # effectively the same as removing these entirely.
 
         # T5 has a mask that can compare sequence ids, we can simulate this here with this transposition
-        # Cf. https://github.com/tensorflow/mesh/blob/8d2465e9bc93129b913b5ccc6a59aa97abd96ec6/mesh_tensorflow/transformer/transformer_layers.py#L270
         # extended_attention_mask = tf.math.equal(extended_attention_mask,
         #                                         tf.transpose(extended_attention_mask, perm=(-1, -2)))
 
@@ -721,7 +716,6 @@ class T5MainLayer(Module):
                 encoder_extended_attention_mask = encoder_attention_mask[:, None, None, :]
 
             # T5 has a mask that can compare sequence ids, we can simulate this here with this transposition
-            # Cf. https://github.com/tensorflow/mesh/blob/8d2465e9bc93129b913b5ccc6a59aa97abd96ec6/mesh_tensorflow/transformer/transformer_layers.py#L270
             # encoder_extended_attention_mask = tf.math.equal(encoder_extended_attention_mask,
             #                                         tf.transpose(encoder_extended_attention_mask, perm=(-1, -2)))
 

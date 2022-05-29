@@ -31,15 +31,26 @@ class GroupNorm(tlx.nn.Module):
         x = tlx.reshape(x, [n, h, w, c]) * self.gamma + self.beta
         return x
 
+# todo: support by tensorlayer
 
 if tlx.ops.BACKEND == "tensorflow":
 
     import tensorflow as tf
 
     einsum = tf.einsum
-elif tlx.ops.BACKEND == "pytorch":
+elif tlx.ops.BACKEND == "pytorch" or tlx.ops.BACKEND == "torch":
     import torch
     einsum = torch.einsum
+
+elif tlx.ops.BACKEND == "paddle" or tlx.ops.BACKEND == "paddlepaddle":
+    import paddle
+    einsum = paddle.einsum
+elif tlx.ops.BACKEND == "mindspore":
+
+    def einsum(equation, *inputs, **kwargs):
+        from mindspore.ops import Einsum
+        einsum = Einsum(equation)
+        return einsum(inputs)
 else:
     def einsum(equation, *inputs, **kwargs):
         raise ValueError(f"einsum do not support {tlx.ops.BACKEND}")
