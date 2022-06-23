@@ -10,3 +10,4 @@ from .trocr import *
 from .hrnet import *
 from .yolo import *
 from .bert import *
+from .pfld import *

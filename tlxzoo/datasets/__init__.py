@@ -7,4 +7,5 @@ from .libri_speech import *
 from .sst2 import *
 from .conll2003 import *
 from .synth90k import *
+from .face300w import *
 
