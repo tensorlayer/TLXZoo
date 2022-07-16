@@ -15,6 +15,9 @@ class ImageClassification(tlx.nn.Module):
             input_shape = kwargs.pop("input_shape", None)
             num_labels = kwargs.pop("num_labels", 1000)
             self.backbone = ResNet50(input_shape=input_shape, num_labels=num_labels, include_top=True)
+        elif backbone.startswith('efficientnet_'):
+            num_labels = kwargs.pop("num_labels", 1000)
+            self.backbone = efficientnet(backbone, num_labels=num_labels)
         else:
             raise ValueError(f"tlxzoo don`t support {backbone}")
 
