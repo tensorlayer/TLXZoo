@@ -141,7 +141,7 @@ class SqueezeExcitation(nn.Module):
         scale_activation: Callable[..., nn.Module] = nn.Sigmoid,
     ) -> None:
         super().__init__()
-        self.avgpool = nn.AdaptiveMeanPool2d(1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc1 = nn.Conv2d(squeeze_channels, (1, 1), padding='VALID',
                              W_init='he_normal', b_init='zeros')
         self.fc2 = nn.Conv2d(input_channels, (1, 1), padding='VALID',
@@ -360,7 +360,7 @@ class EfficientNet(nn.Module):
         )
 
         self.features = nn.Sequential(*layers)
-        self.avgpool = nn.AdaptiveMeanPool2d(1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.flatten = nn.Flatten()
         self.classifier = nn.Sequential(
             nn.Dropout(p=dropout),
