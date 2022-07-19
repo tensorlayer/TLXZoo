@@ -110,6 +110,8 @@ def add_extra_tensor(index, extra_return_tensors_index, tensor, extra_return_ten
 class Preprocess(nn.Module):
     def __init__(self):
         super(Preprocess, self).__init__()
+        self.mean_tensor = tlx.convert_to_tensor([103.939, 116.779, 123.68], np.float32)
+        self.std = None
 
     def forward(self, x, data_format="channels_last"):
         if data_format == 'channels_first':
@@ -121,22 +123,19 @@ class Preprocess(nn.Module):
         else:
             # 'RGB'->'BGR'
             x = x[..., ::-1]
-        mean = [103.939, 116.779, 123.68]
-        std = None
 
-        mean_tensor = tlx.constant(-np.array(mean))
 
         if data_format == "channels_last":
             data_format = 'NHWC'
         if data_format == 'channels_first':
             data_format = 'NCHW'
         # Zero-center by mean pixel
-        if x.dtype != mean_tensor.dtype:
-            x = tlx.bias_add(x, tlx.cast(mean_tensor, x.dtype), data_format=data_format)
+        if x.dtype != self.mean_tensor.dtype:
+            x = tlx.bias_add(x, tlx.cast(self.mean_tensor, x.dtype))
         else:
-            x = tlx.bias_add(x, mean_tensor, data_format)
-        if std is not None:
-            x /= std
+            x = tlx.bias_add(x, self.mean_tensor)
+        if self.std is not None:
+            x /= self.std
         return x
 
 
@@ -161,7 +160,7 @@ class ResNet50(nn.Module):
         else:
             self.preprocess = None
 
-        self.conv1_pad = tlx.ZeroPadding2D(padding=((3, 3), (3, 3)))
+        self.conv1_pad = tlx.ZeroPadding2D(padding=((3, 3), (3, 3)), data_format='channels_last')
         self.conv1_conv = nn.Conv2d(out_channels=64, kernel_size=(7, 7),
                                     stride=(2, 2),
                                     b_init="constant" if use_bias else None,
@@ -173,7 +172,7 @@ class ResNet50(nn.Module):
         if not preact:
             self.conv1_bn = nn.BatchNorm(0.99, epsilon=1.001e-5, name='conv1_bn')
 
-        self.pool1_pad = tlx.ZeroPadding2D(padding=((1, 1), (1, 1)))
+        self.pool1_pad = tlx.ZeroPadding2D(padding=((1, 1), (1, 1)), data_format='channels_last')
         self.pool1_pool = tlx.nn.MaxPool2d(kernel_size=(3, 3), padding="valid",
                                            stride=(2, 2), name='pool1_pool')
 
@@ -190,11 +189,11 @@ class ResNet50(nn.Module):
         self.include_top = include_top
         self.pooling = pooling
         if include_top:
-            self.pool = tlx.nn.GlobalMeanPool2d(name='avg_pool')
+            self.pool = tlx.nn.GlobalAvgPool2d(name='avg_pool')
             self.include_top_dense = tlx.nn.Linear(out_features=num_labels, act=None, name='predictions')
         else:
             if pooling == 'avg':
-                self.pool = tlx.nn.GlobalMeanPool2d(name='avg_pool')
+                self.pool = tlx.nn.GlobalAvgPool2d(name='avg_pool')
             elif pooling == 'max':
                 self.pool = tlx.nn.GlobalMaxPool2d(name='max_pool')
 
