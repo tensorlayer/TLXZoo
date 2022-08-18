@@ -88,14 +88,13 @@ class Wider(Dataset, BaseDataSetMixin):
 
         if limit:
             img_paths = img_paths[:limit]
-            words = img_paths[:limit]
+            words = words[:limit]
 
         self.img_paths = img_paths
         self.words = words
 
     def __getitem__(self, index: int):
         img_path = self.img_paths[index]
-        img_path = os.path.join(self.archive_path, img_path)
 
         word = self.words[index]
         target = get_target(word)

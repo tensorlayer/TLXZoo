@@ -56,12 +56,12 @@ class ResNetBase(tlx.nn.Module):
     def __init__(self, backbone_bn_shape, name, **kwargs):
         super().__init__(name=name, **kwargs)
 
-        self.pad1 = ZeroPad2d(3, name=name + '/pad1')
+        self.pad1 = ZeroPad2d(((3, 3), (3, 3)), name=name + '/pad1')
         self.conv1 = Conv2d(out_channels=64, kernel_size=(7, 7), stride=(2, 2), padding='valid', in_channels=3,
                             b_init=None, name=name + '/conv1')
         self.bn1 = FrozenBatchNorm2D(backbone_bn_shape, name=name + '/bn1')
         self.relu = ReLU()
-        self.pad2 = ZeroPad2d(1, name=name + '/pad2')
+        self.pad2 = ZeroPad2d(((1, 1), (1, 1)), name=name + '/pad2')
         self.maxpool = MaxPool2d(kernel_size=(3, 3), stride=(2, 2), padding='valid')
 
     def forward(self, x):
@@ -167,7 +167,7 @@ class BottleNeck(tlx.nn.Module):
                  **kwargs):
         super().__init__(name=name, **kwargs)
         self.downsample = downsample
-        self.pad = ZeroPad2d(dilation)
+        self.pad = ZeroPad2d(((dilation, dilation), (dilation, dilation)))
         self.relu = ReLU()
 
         self.conv1 = Conv2d(out_channels=dim1, kernel_size=(1, 1), in_channels=first_in_channels, padding="valid",

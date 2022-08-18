@@ -22,7 +22,6 @@ class ConvBlock(nn.Module):
                                   stride=(1, 1),
                                   padding=padding,
                                   W_init=_get_kernel_initializer(filters, kernel_size),
-                                  name=name + "/conv2d_1"
                                   )
         self.dropout_1 = nn.Dropout(dropout_rate)
         self.activation_1 = str2act(activation)()
@@ -32,7 +31,6 @@ class ConvBlock(nn.Module):
                                   stride=(1, 1),
                                   padding=padding,
                                   W_init=_get_kernel_initializer(filters, kernel_size),
-                                  name=name + "/conv2d_2"
                                   )
         self.dropout_2 = nn.Dropout(dropout_rate)
         self.activation_2 = str2act(activation)()

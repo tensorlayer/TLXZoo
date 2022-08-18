@@ -10,7 +10,6 @@ class BasicBlock(Module):
                                           kernel_size=(3, 3),
                                           stride=(stride, stride),
                                           padding="same",
-                                          name=name + "/conv1",
                                           in_channels=filter_num,
                                           )
         self.bn1 = tlx.nn.BatchNorm(num_features=filter_num, momentum=0.1, epsilon=1e-5)
@@ -18,7 +17,6 @@ class BasicBlock(Module):
                                           kernel_size=(3, 3),
                                           stride=(1, 1),
                                           padding="same",
-                                          name=name + "/conv2",
                                           in_channels=filter_num,
                                           )
         self.bn2 = tlx.nn.BatchNorm(num_features=filter_num, momentum=0.1, epsilon=1e-5)
@@ -28,7 +26,6 @@ class BasicBlock(Module):
                                                kernel_size=(1, 1),
                                                stride=(stride, stride),
                                                padding="same",
-                                               name=name + "/downsample",
                                                in_channels=filter_num,
                                                ),
                           tlx.nn.BatchNorm(num_features=filter_num, momentum=0.1, epsilon=1e-5)
@@ -57,22 +54,21 @@ class BasicBlock(Module):
 
 
 class BottleNeck(Module):
-    def __init__(self, filter_num, stride=1, name=""):
+    def __init__(self, in_filter_num, stride=1, name=""):
         super(BottleNeck, self).__init__()
+        filter_num = 64
         self.conv1 = tlx.nn.layers.Conv2d(out_channels=filter_num,
                                           kernel_size=(1, 1),
                                           stride=(1, 1),
                                           padding="same",
-                                          name=name + "/conv1",
                                           b_init=None,
-                                          in_channels=filter_num,
+                                          in_channels=in_filter_num,
                                           )
         self.bn1 = tlx.nn.BatchNorm(num_features=filter_num, momentum=0.1, epsilon=1e-5)
         self.conv2 = tlx.nn.layers.Conv2d(out_channels=filter_num,
                                           kernel_size=(3, 3),
                                           stride=(stride, stride),
                                           padding="same",
-                                          name=name + "/conv2",
                                           b_init=None,
                                           in_channels=filter_num,
                                           )
@@ -81,7 +77,6 @@ class BottleNeck(Module):
                                           kernel_size=(1, 1),
                                           stride=(1, 1),
                                           padding="same",
-                                          name=name + "/conv3",
                                           b_init=None,
                                           in_channels=filter_num,
                                           )
@@ -92,8 +87,7 @@ class BottleNeck(Module):
                                            stride=(stride, stride),
                                            padding="same",
                                            b_init=None,
-                                           name=name + "/downsample",
-                                           in_channels=filter_num,
+                                           in_channels=in_filter_num,
                                            ),
                       tlx.nn.BatchNorm(num_features=filter_num * 4, momentum=0.1, epsilon=1e-5)
                       ]
@@ -129,7 +123,7 @@ def make_bottleneck_layer(filter_num, blocks, stride=1):
     res_block = [BottleNeck(filter_num, stride=stride)]
 
     for _ in range(1, blocks):
-        res_block.append(BottleNeck(filter_num, stride=1))
+        res_block.append(BottleNeck(256, stride=1))
 
     return tlx.nn.Sequential(res_block)
 
@@ -314,7 +308,6 @@ class PoseHighResolutionNet(Module):
                                           stride=(2, 2),
                                           padding="same",
                                           b_init=None,
-                                          name=name + "/conv1",
                                           in_channels=3,
                                           )
         self.bn1 = tlx.nn.BatchNorm(num_features=64, momentum=0.1, epsilon=1e-5)
@@ -324,7 +317,6 @@ class PoseHighResolutionNet(Module):
                                           stride=(2, 2),
                                           padding="same",
                                           b_init=None,
-                                          name=name + "/conv2",
                                           in_channels=64,
                                           )
         self.bn2 = tlx.nn.BatchNorm(num_features=64, momentum=0.1, epsilon=1e-5)
@@ -348,7 +340,6 @@ class PoseHighResolutionNet(Module):
                                           kernel_size=(self.conv3_kernel, self.conv3_kernel),
                                           stride=(1, 1),
                                           padding="same",
-                                          name=name + "/conv3",
                                           in_channels=self.stage_4.get_stage_channels()[0],
                                           )
         self.relu = tlx.nn.ReLU()

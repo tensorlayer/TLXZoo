@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     n_epoch = 500
 
-    trainer = tlx.model.Model(network=model, loss_fn=model.loss_fn, optimizer=optimizer, metric=metric)
+    trainer = tlx.model.Model(network=model, loss_fn=model.loss_fn, optimizer=optimizer, metrics=metric)
     trainer.train(n_epoch=n_epoch, train_dataset=cifar10.train, test_dataset=cifar10.test, print_freq=1,
                   print_train_batch=False)
 
