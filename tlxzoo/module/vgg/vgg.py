@@ -33,21 +33,20 @@ __all__ = [
 layer_names = [
     ['conv1_1', 'conv1_2'], 'pool1', ['conv2_1', 'conv2_2'], 'pool2',
     ['conv3_1', 'conv3_2', 'conv3_3', 'conv3_4'], 'pool3', ['conv4_1', 'conv4_2', 'conv4_3', 'conv4_4'], 'pool4',
-    ['conv5_1', 'conv5_2', 'conv5_3', 'conv5_4'], 'pool5', 'flatten', 'fc1_relu', 'fc2_relu', 'outputs'
+    ['conv5_1', 'conv5_2', 'conv5_3', 'conv5_4'], 'pool5'
 ]
 
 cfg = {
-    'A': [[64], 'M', [128], 'M', [256, 256], 'M', [512, 512], 'M', [512, 512], 'M', 'F', 'fc1', 'fc2', 'O'],
-    'B': [[64, 64], 'M', [128, 128], 'M', [256, 256], 'M', [512, 512], 'M', [512, 512], 'M', 'F', 'fc1', 'fc2', 'O'],
+    'A': [[64], 'M', [128], 'M', [256, 256], 'M', [512, 512], 'M', [512, 512], 'M'],
+    'B': [[64, 64], 'M', [128, 128], 'M', [256, 256], 'M', [512, 512], 'M', [512, 512], 'M'],
     'D':
         [
-            [64, 64], 'M', [128, 128], 'M', [256, 256, 256], 'M', [512, 512, 512], 'M', [512, 512, 512], 'M', 'F',
-            'fc1', 'fc2', 'O'
+            [64, 64], 'M', [128, 128], 'M', [256, 256, 256], 'M', [512, 512, 512], 'M', [512, 512, 512], 'M'
         ],
     'E':
         [
             [64, 64], 'M', [128, 128], 'M', [256, 256, 256, 256], 'M', [512, 512, 512, 512], 'M', [512, 512, 512, 512],
-            'M', 'F', 'fc1', 'fc2', 'O'
+            'M'
         ],
 }
 
@@ -72,7 +71,7 @@ model_saved_name = {'vgg16': 'vgg16_weights.npz', 'vgg19': 'vgg19.npy'}
 
 class VGG(Module):
 
-    def __init__(self, layer_type, batch_norm=True, end_with='outputs', num_labels=1000, name=None):
+    def __init__(self, layer_type, batch_norm=True, include_top=True, num_classes=1000, name=None,dropout=0.5):
         """
         VGG19 model
         :param layer_type: str
@@ -81,30 +80,39 @@ class VGG(Module):
             Whether use batch norm
         :param end_with: str
             The end point of the model. Default ``fc3_relu`` i.e. the whole model.
-        :param num_labels: str
+        :param num_classes: str
             Number of classes to classify images
         :param name: str
             Module name
         """
         super(VGG, self).__init__(name=name)
-        self.end_with = end_with
 
         config = cfg[mapped_cfg[layer_type]]
-        self.dropout = tlx.nn.Dropout(0.3)
-        self.make_layer = make_layers(config, batch_norm, end_with)
-        self.batch_norm = tlx.nn.BatchNorm(num_features=512)
-        self.classifier = tlx.nn.Linear(out_features=num_labels, in_features=512, name="classifier")
+        self.include_top=include_top
+
+        self.features = make_layers(config, batch_norm)
+        self.flatten=Flatten()
+
+        if self.include_top:
+            self.classifier = Sequential(
+                                        Linear(4096,act=tlx.ReLU),
+                                        Dropout(p=dropout),
+                                        Linear(4096, in_features=4096,act=tlx.ReLU),
+                                        Dropout(p=dropout),
+                                        Linear(num_classes,in_features=4096),
+                                            )
 
     def forward(self, inputs):
-        out = self.make_layer(inputs)
-        last_out = self.batch_norm(out)
-        last_out = self.dropout(last_out)
+        out = self.features(inputs)
 
-        logits = self.classifier(last_out)
-        return logits
+        if self.include_top:
+            out=self.flatten(out)
+            logits = self.classifier(out)
+            return logits
+        else:
+            return out
 
-
-def make_layers(layer_config, batch_norm=False, end_with='outputs', fc1_units=512, fc2_units=512):
+def make_layers(layer_config, batch_norm=False, end_with='outputs', fc1_units=4096, fc2_units=4096):
     layer_list = []
     is_end = False
     for layer_group_idx, layer_group in enumerate(layer_config):
@@ -138,17 +146,7 @@ def make_layers(layer_config, batch_norm=False, end_with='outputs', fc1_units=51
                 # padding="valid", strides=None
                 layer_list.append(MaxPool2d(kernel_size=(2, 2), padding='valid', name=layer_name))
                 # layer_list.append(MaxPool2d(filter_size=(2, 2), strides=(2, 2), padding='SAME', name=layer_name))
-            elif layer_group == 'O':
-                layer_list.append(Linear(out_features=1000, in_features=fc2_units, name=layer_name))
-            elif layer_group == 'F':
-                layer_list.append(Dropout(0.3))
-                layer_list.append(Flatten(name='flatten'))
-            elif layer_group == 'fc1':
-                layer_list.append(
-                    Linear(out_features=fc1_units, act=tlx.ReLU, in_features=512, name=layer_name))
-            elif layer_group == 'fc2':
-                layer_list.append(
-                    Linear(out_features=fc2_units, act=tlx.ReLU, in_features=fc1_units, name=layer_name))
+            
             if layer_name == end_with:
                 is_end = True
         if is_end:
