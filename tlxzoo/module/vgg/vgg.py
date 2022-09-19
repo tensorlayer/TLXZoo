@@ -24,7 +24,8 @@ feeding images of multiple sizes is by doing center cropping.
 
 import tensorlayerx as tlx
 from tensorlayerx import logging
-from tensorlayerx.nn import (BatchNorm, Conv2d, Linear, Flatten, Sequential, MaxPool2d, Dropout, Module)
+from tensorlayerx.nn import (
+    BatchNorm, Conv2d, Linear, Flatten, Sequential, MaxPool2d, Dropout, Module)
 
 __all__ = [
     'VGG',
@@ -32,7 +33,8 @@ __all__ = [
 
 layer_names = [
     ['conv1_1', 'conv1_2'], 'pool1', ['conv2_1', 'conv2_2'], 'pool2',
-    ['conv3_1', 'conv3_2', 'conv3_3', 'conv3_4'], 'pool3', ['conv4_1', 'conv4_2', 'conv4_3', 'conv4_4'], 'pool4',
+    ['conv3_1', 'conv3_2', 'conv3_3', 'conv3_4'], 'pool3', [
+        'conv4_1', 'conv4_2', 'conv4_3', 'conv4_4'], 'pool4',
     ['conv5_1', 'conv5_2', 'conv5_3', 'conv5_4'], 'pool5'
 ]
 
@@ -41,13 +43,15 @@ cfg = {
     'B': [[64, 64], 'M', [128, 128], 'M', [256, 256], 'M', [512, 512], 'M', [512, 512], 'M'],
     'D':
         [
-            [64, 64], 'M', [128, 128], 'M', [256, 256, 256], 'M', [512, 512, 512], 'M', [512, 512, 512], 'M'
-        ],
+            [64, 64], 'M', [128, 128], 'M', [256, 256, 256], 'M', [
+                512, 512, 512], 'M', [512, 512, 512], 'M'
+    ],
     'E':
         [
-            [64, 64], 'M', [128, 128], 'M', [256, 256, 256, 256], 'M', [512, 512, 512, 512], 'M', [512, 512, 512, 512],
+            [64, 64], 'M', [128, 128], 'M', [256, 256, 256, 256], 'M', [
+                512, 512, 512, 512], 'M', [512, 512, 512, 512],
             'M'
-        ],
+    ],
 }
 
 mapped_cfg = {
@@ -71,46 +75,49 @@ model_saved_name = {'vgg16': 'vgg16_weights.npz', 'vgg19': 'vgg19.npy'}
 
 class VGG(Module):
 
-    def __init__(self, layer_type, batch_norm=True, include_top=True, num_classes=1000, name=None,dropout=0.5):
+    def __init__(self, layer_type, batch_norm=False, include_top=True, num_classes=1000, name=None, dropout=0.5):
         """
         VGG19 model
         :param layer_type: str
             One of vgg11,vgg13,vgg16,vgg19
         :param batch_norm: boolean
             Whether use batch norm
-        :param end_with: str
-            The end point of the model. Default ``fc3_relu`` i.e. the whole model.
+        :param include_top: bool
+            Whether to include the 3 fully-connected layers at the top of the network.
         :param num_classes: str
             Number of classes to classify images
         :param name: str
             Module name
+        :param dropout: float
+            Dropout ratio
         """
         super(VGG, self).__init__(name=name)
 
         config = cfg[mapped_cfg[layer_type]]
-        self.include_top=include_top
+        self.include_top = include_top
 
         self.features = make_layers(config, batch_norm)
-        self.flatten=Flatten()
+        self.flatten = Flatten()
 
         if self.include_top:
             self.classifier = Sequential(
-                                        Linear(4096,act=tlx.ReLU),
-                                        Dropout(p=dropout),
-                                        Linear(4096, in_features=4096,act=tlx.ReLU),
-                                        Dropout(p=dropout),
-                                        Linear(num_classes,in_features=4096),
-                                            )
+                Linear(4096, act=tlx.ReLU),
+                Dropout(p=dropout),
+                Linear(4096, in_features=4096, act=tlx.ReLU),
+                Dropout(p=dropout),
+                Linear(num_classes, in_features=4096),
+            )
 
     def forward(self, inputs):
         out = self.features(inputs)
 
         if self.include_top:
-            out=self.flatten(out)
+            out = self.flatten(out)
             logits = self.classifier(out)
             return logits
         else:
             return out
+
 
 def make_layers(layer_config, batch_norm=False, end_with='outputs', fc1_units=4096, fc2_units=4096):
     layer_list = []
@@ -134,7 +141,8 @@ def make_layers(layer_config, batch_norm=False, end_with='outputs', fc1_units=40
                     )
                 )
                 if batch_norm:
-                    layer_list.append(BatchNorm(num_features=n_filter, gamma_init="ones", moving_var_init="ones"))
+                    layer_list.append(
+                        BatchNorm(num_features=n_filter, gamma_init="ones", moving_var_init="ones"))
                 if idx < (len(layer_group) - 1):
                     layer_list.append(Dropout(0.3))
                 if layer_name == end_with:
@@ -144,13 +152,12 @@ def make_layers(layer_config, batch_norm=False, end_with='outputs', fc1_units=40
             layer_name = layer_names[layer_group_idx]
             if layer_group == 'M':
                 # padding="valid", strides=None
-                layer_list.append(MaxPool2d(kernel_size=(2, 2), padding='valid', name=layer_name))
+                layer_list.append(MaxPool2d(kernel_size=(
+                    2, 2), padding='valid', name=layer_name))
                 # layer_list.append(MaxPool2d(filter_size=(2, 2), strides=(2, 2), padding='SAME', name=layer_name))
-            
+
             if layer_name == end_with:
                 is_end = True
         if is_end:
             break
     return Sequential(layer_list)
-
-
