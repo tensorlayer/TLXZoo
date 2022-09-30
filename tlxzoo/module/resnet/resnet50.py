@@ -110,7 +110,7 @@ def add_extra_tensor(index, extra_return_tensors_index, tensor, extra_return_ten
 class Preprocess(nn.Module):
     def __init__(self):
         super(Preprocess, self).__init__()
-        self.mean_tensor = tlx.convert_to_tensor([103.939, 116.779, 123.68], np.float32)
+        self.mean_tensor = tlx.convert_to_tensor([103.939, 116.779, 123.68], tlx.float32)
         self.std = None
 
     def forward(self, x, data_format="channels_last"):

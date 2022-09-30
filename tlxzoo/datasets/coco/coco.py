@@ -11,7 +11,7 @@ import copy
 
 class CocoDetection(Dataset, BaseDataSetMixin):
     def __init__(
-        self, root, annFile, transforms=None, limit=None,
+        self, root, annFile, transforms=None, limit=None, image_format='pil'
     ):
         from pycocotools.coco import COCO
         self.coco = COCO(annFile)
@@ -32,6 +32,7 @@ class CocoDetection(Dataset, BaseDataSetMixin):
         self.ids = new_ids
         if limit:
             self.ids = self.ids[:limit]
+        self.image_format = image_format
 
         print("load ids:", len(self.ids))
 
@@ -40,10 +41,10 @@ class CocoDetection(Dataset, BaseDataSetMixin):
 
     def _load_image(self, id: int):
         path = self.coco.loadImgs(id)[0]["file_name"]
-        # image = cv2.imread(os.path.join(self.root, self.data_type, path))
-        # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-        return Image.open(os.path.join(self.root, self.data_type, path)).convert('RGB')
+        if self.image_format == 'opencv':
+            return cv2.imread(os.path.join(self.root, self.data_type, path))
+        else:
+            return Image.open(os.path.join(self.root, self.data_type, path)).convert('RGB')
 
     def _load_target(self, id):
         return self.coco.loadAnns(self.coco.getAnnIds(id))
@@ -65,7 +66,7 @@ class CocoDetection(Dataset, BaseDataSetMixin):
 
 class CocoHumanPoseEstimation(Dataset, BaseDataSetMixin):
     def __init__(
-        self, root, annFile, transforms=None, limit=None,
+        self, root, annFile, transforms=None, limit=None, image_format='pil'
     ):
         from pycocotools.coco import COCO
         self.coco = COCO(annFile)
@@ -92,6 +93,7 @@ class CocoHumanPoseEstimation(Dataset, BaseDataSetMixin):
 
         if limit:
             self.ids = self.ids[:limit]
+        self.image_format = image_format
 
         print("load ids:", len(self.ids))
 
@@ -100,7 +102,10 @@ class CocoHumanPoseEstimation(Dataset, BaseDataSetMixin):
 
     def _load_image(self, id: int):
         path = self.coco.loadImgs(id)[0]["file_name"]
-        return Image.open(os.path.join(self.root, self.data_type, path)).convert('RGB')
+        if self.image_format == 'opencv':
+            return cv2.imread(os.path.join(self.root, self.data_type, path))
+        else:
+            return Image.open(os.path.join(self.root, self.data_type, path)).convert('RGB')
 
     def _load_target(self, id):
         return self.coco.loadAnns(self.coco.getAnnIds(id))
@@ -128,14 +133,14 @@ class CocoHumanPoseEstimation(Dataset, BaseDataSetMixin):
 @Registers.datasets.register("Coco")
 class CocoDataSetDict(BaseDataSetDict):
     @classmethod
-    def load(cls, root_path, train_ann_path, val_ann_path, train_limit=None):
+    def load(cls, root_path, train_ann_path, val_ann_path, train_limit=None, image_format='pil'):
 
         if "person_keypoints_" in train_ann_path:
-            return cls({"train": CocoHumanPoseEstimation(root_path, train_ann_path, limit=train_limit),
-                        "test": CocoHumanPoseEstimation(root_path, val_ann_path)})
+            return cls({"train": CocoHumanPoseEstimation(root_path, train_ann_path, limit=train_limit, image_format=image_format),
+                        "test": CocoHumanPoseEstimation(root_path, val_ann_path, image_format=image_format)})
         else:
-            return cls({"train": CocoDetection(root_path, train_ann_path, limit=train_limit),
-                        "test": CocoDetection(root_path, val_ann_path)})
+            return cls({"train": CocoDetection(root_path, train_ann_path, limit=train_limit, image_format=image_format),
+                        "test": CocoDetection(root_path, val_ann_path, image_format=image_format)})
 
 
 class CocoEvaluator(object):

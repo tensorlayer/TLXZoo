@@ -1,6 +1,6 @@
 import numpy as np
 import tensorlayerx as tlx
-import PIL
+from PIL import Image
 
 
 class DetrTransform(object):
@@ -113,12 +113,12 @@ class DetrTransform(object):
 
         return masks
 
-    def resize(self, image, size, resample=PIL.Image.BILINEAR):
+    def resize(self, image, size, resample=Image.BILINEAR):
         if isinstance(size, int):
             size = (size, size)
         elif isinstance(size, list):
             size = tuple(size)
-        if not isinstance(image, PIL.Image.Image):
+        if not isinstance(image, Image.Image):
             image = self.to_pil_image(image)
 
         return image.resize(size, resample=resample)
@@ -193,7 +193,7 @@ class DetrTransform(object):
 
     def to_numpy_array(self, image, rescale=None, channel_first=False):
 
-        if isinstance(image, PIL.Image.Image):
+        if isinstance(image, Image.Image):
             image = np.array(image)
 
         if rescale is None:
@@ -209,7 +209,7 @@ class DetrTransform(object):
 
     def normalize(self, image, mean, std):
 
-        if isinstance(image, PIL.Image.Image):
+        if isinstance(image, Image.Image):
             image = self.to_numpy_array(image)
 
         if isinstance(image, np.ndarray):

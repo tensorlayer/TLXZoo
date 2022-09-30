@@ -12,3 +12,4 @@ from .yolo import *
 from .bert import *
 from .pfld import *
 from .efficientnet import *
+from .ppyoloe import *

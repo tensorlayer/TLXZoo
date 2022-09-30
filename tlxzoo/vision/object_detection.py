@@ -7,12 +7,14 @@ class ObjectDetection(tlx.nn.Module):
         super(ObjectDetection, self).__init__()
         if backbone == "detr":
             self.backbone = Detr(**kwargs)
+        elif backbone.startswith('ppyoloe_'):
+            self.backbone = ppyoloe(backbone, **kwargs)
         else:
             raise ValueError(f"tlxzoo don`t support {backbone}")
 
     def loss_fn(self, output, target, name="", **kwargs):
         if hasattr(self.backbone, "loss_fn"):
-            return self.backbone.loss_fn(output, target)
+            return self.backbone.loss_fn(output, target, **kwargs)
         else:
             raise ValueError("loss fn isn't defined.")
 
