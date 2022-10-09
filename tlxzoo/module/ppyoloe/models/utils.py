@@ -34,6 +34,7 @@ def my_multiclass_nms(bboxes, scores, score_threshold=0.7, nms_threshold=0.45, n
     :param class_agnostic:
     :return:
     '''
+    import torchvision
 
     # 每张图片的预测结果
     output = [None for _ in range(len(bboxes))]
@@ -46,15 +47,15 @@ def my_multiclass_nms(bboxes, scores, score_threshold=0.7, nms_threshold=0.45, n
 
         # 每个预测框最高得分的分数和对应的类别id
         class_conf = tlx.reduce_max(score, 1, keepdims=True)
-        class_pred = tlx.argmax(score, 1)
+        class_pred = tlx.expand_dims(tlx.argmax(score, 1), -1)
 
         # 分数超过阈值的预测框为True
-        conf_mask = tlx.squeeze((tlx.squeeze(class_conf) >= score_threshold))
+        conf_mask = tlx.squeeze(class_conf, axis=1) >= score_threshold
         # 这样排序 (x1, y1, x2, y2, 得分, 类别id)
-        detections = tlx.concat(xyxy, class_conf, tlx.cast(class_pred, tlx.float32), 1)
+        detections = tlx.concat([xyxy, class_conf, tlx.cast(class_pred, tlx.float32)], 1)
         # 只保留超过阈值的预测框
         detections = detections[conf_mask]
-        if not tlx.get_tensor_shape(detections.size)[0]:
+        if not tlx.get_tensor_shape(detections)[0]:
             continue
 
         # 使用torchvision自带的nms、batched_nms

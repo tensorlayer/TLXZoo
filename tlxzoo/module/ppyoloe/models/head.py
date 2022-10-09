@@ -493,9 +493,8 @@ class PPYOLOEHead(nn.Module):
             [scale_x, scale_y, scale_x, scale_y], -1), [-1, 1, 4])
         # [N, A, 4]     pred_scores.shape = [N, 80, A]
         pred_bboxes /= scale_factor
-        return pred_bboxes
         # nms
-        # preds = []
-        # yolo_scores = tlx.transpose(pred_scores, (0, 2, 1))  # [N, A, 80]
-        # preds = my_multiclass_nms(pred_bboxes, yolo_scores, **self.nms_cfg)
-        # return preds
+        preds = []
+        yolo_scores = tlx.transpose(pred_scores, (0, 2, 1))  # [N, A, 80]
+        preds = my_multiclass_nms(pred_bboxes, yolo_scores, **self.nms_cfg)
+        return preds
