@@ -1,22 +1,24 @@
-from ...utils.registry import Registers
-from ..dataset import *
-import tensorlayerx as tlx
+from tensorlayerx.dataflow import Dataset
+from tensorlayerx.files import load_cifar10_dataset
 
 
-def classify_label_transform(data, label):
-    return data, label.astype('int64')
+class Cifar10Dataset(Dataset):
+    def __init__(self, root_path, split='train', transform=None):
+        x_train, y_train, x_test, y_test = load_cifar10_dataset(path=root_path)
+        if split == 'train':
+            self.data = x_train
+            self.label = y_train
+        else:
+            self.data = x_test
+            self.label = y_test
+        self.transform = transform
 
+    def __getitem__(self, index):
+        data = self.data[index]
+        if self.transform:
+            data = self.transform(data)
+        label = self.label[index]
+        return data, label
 
-@Registers.datasets.register("Cifar10")
-class Cifar10DataSetDict(BaseDataSetDict):
-    @classmethod
-    def load(cls, train_limit=None, **kwargs):
-        x_train, y_train, x_test, y_test = tlx.files.load_cifar10_dataset(shape=(-1, 32, 32, 3), plotable=False)
-        if train_limit is not None:
-            x_train = x_train[:train_limit]
-            y_train = y_train[:train_limit]
-
-        label_transform = classify_label_transform
-
-        return cls({"train": BaseDataSet(x_train, y_train, transforms=[label_transform]),
-                    "test": BaseDataSet(x_test, y_test, transforms=[label_transform])})
+    def __len__(self):
+        return len(self.data)
