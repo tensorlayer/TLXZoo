@@ -289,13 +289,6 @@ class UnetTransform(object):
         self.label_size = label_size
         self.image_size = image_size
         self.crop = crop_labels_to_shape(label_size)
-        self.is_train = True
-
-    def set_train(self):
-        self.is_train = True
-
-    def set_eval(self):
-        self.is_train = False
 
     def __call__(self, image, label):
         image, label = self.crop(image, label)

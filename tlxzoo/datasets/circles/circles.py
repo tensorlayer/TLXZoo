@@ -1,50 +1,28 @@
-from ...utils.registry import Registers
-from ..dataset import BaseDataSetDict, Dataset, BaseDataSetMixin
 import numpy as np
+from tensorlayerx.dataflow import Dataset
 
 
-class Circles(Dataset, BaseDataSetMixin):
+class CirclesDataset(Dataset):
     def __init__(
-            self, num, nx=172, ny=172, transforms=None, limit=None,
+            self, num, nx=172, ny=172, transform=None
     ):
-        if transforms is not None:
-            self.transforms = transforms
-        else:
-            self.transforms = []
-
-        super(Circles, self).__init__()
-
-        if limit:
-            num = limit
-
         self.nx = nx
         self.ny = ny
         self.num = num
+        self.transform = transform
 
     def __getitem__(self, index: int):
-
         image, mask = _create_image_and_mask(self.nx, self.ny)
         label = np.empty((self.nx, self.ny, 2))
         label[..., 0] = ~mask
         label[..., 1] = mask
-
-        image, label = self.transform(image, label)
+        if self.transform:
+            image, label = self.transform(image, label)
 
         return image, label
 
     def __len__(self) -> int:
         return self.num
-
-
-def _build_samples(sample_count: int, nx: int, ny: int, **kwargs):
-    images = np.empty((sample_count, nx, ny, 1))
-    labels = np.empty((sample_count, nx, ny, 2))
-    for i in range(sample_count):
-        image, mask = _create_image_and_mask(nx, ny, **kwargs)
-        images[i] = image
-        labels[i, ..., 0] = ~mask
-        labels[i, ..., 1] = mask
-    return images, labels
 
 
 def _create_image_and_mask(nx, ny, cnt=10, r_min=3, r_max=10, border=32, sigma=20):
@@ -68,12 +46,3 @@ def _create_image_and_mask(nx, ny, cnt=10, r_min=3, r_max=10, border=32, sigma=2
     image /= np.amax(image)
 
     return image, mask
-
-
-@Registers.datasets.register("Circles")
-class CirclesDataSetDict(BaseDataSetDict):
-    @classmethod
-    def load(cls, train_limit=None, config=None):
-        return cls({"train": Circles(1000, limit=train_limit),
-                    "test": Circles(100)})
-

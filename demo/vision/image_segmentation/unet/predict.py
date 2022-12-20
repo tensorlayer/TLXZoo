@@ -1,21 +1,21 @@
-from tlxzoo.datasets import DataLoaders
-from tlxzoo.module.unet import UnetTransform, crop_image_and_label_to_shape
-from tlxzoo.vision.image_segmentation import ImageSegmentation, Accuracy, val
-import tensorlayerx as tlx
 import matplotlib.pyplot as plt
 import numpy as np
+from tensorlayerx.dataflow import DataLoader
+from tlxzoo.datasets.circles import CirclesDataset
+from tlxzoo.module.unet import UnetTransform, crop_image_and_label_to_shape
+from tlxzoo.vision.image_segmentation import ImageSegmentation
 
 
 if __name__ == '__main__':
-    circles = DataLoaders("Circles", per_device_train_batch_size=2, per_device_eval_batch_size=3)
     transform = UnetTransform()
-    circles.register_transform_hook(transform)
+    test_dataset = CirclesDataset(100, transform=transform)
+    test_dataloader = DataLoader(test_dataset, batch_size=2)
 
     model = ImageSegmentation(backbone="unet")
     model.load_weights("./demo/vision/image_segmentation/unet/model.npz")
     crop = crop_image_and_label_to_shape(transform.label_size)
 
-    for i, j in circles.test:
+    for i, j in test_dataloader:
         prediction = model.predict(i)
         fig, ax = plt.subplots(3, 3, sharex=True, sharey=True, figsize=(10, 10))
         for i, (image, label) in enumerate(zip(i, j)):
@@ -29,5 +29,5 @@ if __name__ == '__main__':
             ax[i][2].matshow(np.argmax(prediction[i, ...], axis=-1), cmap=plt.cm.gray)
             ax[i][2].set_title('Predicted Mask')
             ax[i][2].axis('off')
-        plt.savefig("circle.png")
+        plt.savefig("./demo/vision/image_segmentation/unet/circle.png")
         break
