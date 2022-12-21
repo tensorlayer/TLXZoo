@@ -126,41 +126,68 @@ def normalize(image):
     return image
 
 
-class Face300WTransform(object):
+class Crop(object):
+    def __call__(self, data):
+        data['bbox'] = np.asarray(data['bbox'], dtype=np.int)
+        data['landmark'] = np.asarray(data['landmark'], dtype=np.float32).reshape((-1, 2))
+        data['image'], data['landmark'] = crop(data['image'], data['bbox'], data['landmark'])
+        del data['bbox']
+        return data
+
+
+class Resize(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, data):
+        data['image'], data['landmark'] = resize(data['image'], self.size, data['landmark'])
+        data['size'] = self.size
+        return data
+
+
+class RandomHorizontalFlip(object):
     mirror_indexes = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 27, 28, 29, 30, 35, 34,
                       33, 32, 31, 45, 44, 43, 42, 47, 46, 39, 38, 37, 36, 41, 40, 54, 53, 52, 51, 50, 49, 48, 59, 58, 57, 56, 55, 64, 63, 62, 61, 60, 67, 66, 65]
-    tracked_points = [17, 21, 22, 26, 36, 39, 42, 45, 31, 35, 48, 54, 57, 8]
+    
+    def __call__(self, data):
+        data['image'], data['landmark'] = random_horizontal_flip(data['image'], data['landmark'], self.mirror_indexes)
+        return data
 
-    def __init__(self, size=(112, 112), angle_range=list(range(-30, 31, 5)), occlude_size=(50, 50), **kwargs):
-        super(Face300WTransform, self).__init__(**kwargs)
-        self.size = size
+
+class RandomRotate(object):
+    def __init__(self, angle_range):
         self.angle_range = angle_range
+        
+    def __call__(self, data):
+        data['image'], data['landmark'] = random_rotate(data['image'], data['landmark'], self.angle_range)
+        return data
+
+
+class RandomOcclude(object):
+    def __init__(self, occlude_size):
         self.occlude_size = occlude_size
-        self.is_train = True
+        
+    def __call__(self, data):
+        data['image'] = random_occlude(data['image'], self.occlude_size)
+        return data
 
-    def set_eval(self):
-        self.is_train = False
 
-    def set_train(self):
-        self.is_train = True
+class Normalize(object):
+    def __call__(self, data):
+        data['image'] = normalize(data['image'])
+        data['landmark'][:, 0] /= data['size'][0]
+        data['landmark'][:, 1] /= data['size'][1]
+        return data
 
-    def __call__(self, image, label):
-        bbox = np.asarray(label[0], dtype=np.int)
-        landmark = np.asarray(label[1], dtype=np.float32).reshape((-1, 2))
 
-        image, landmark = crop(image, bbox, landmark)
-        image, landmark = resize(image, self.size, landmark)
-        if self.is_train:
-            image, landmark = random_horizontal_flip(
-                image, landmark, self.mirror_indexes)
-            image, landmark = random_rotate(image, landmark, self.angle_range)
-            image = random_occlude(image, self.occlude_size)
-        image = normalize(image)
+class CalculateEulerAngles(object):
+    tracked_points = [17, 21, 22, 26, 36, 39, 42, 45, 31, 35, 48, 54, 57, 8]
+    
+    def __call__(self, data):
+        data['euler_angles'] = np.asarray(calculate_pitch_yaw_roll(data['landmark'][self.tracked_points]), dtype=np.float32)
+        return data
 
-        landmark[:, 0] /= self.size[0]
-        landmark[:, 1] /= self.size[1]
 
-        euler_angles = np.asarray(calculate_pitch_yaw_roll(
-            landmark[self.tracked_points]), dtype=np.float32)
-
-        return image, (landmark.reshape((-1,)), euler_angles)
+class ToTuple(object):
+    def __call__(self, data):
+        return data['image'], (data['landmark'], data['euler_angles'])

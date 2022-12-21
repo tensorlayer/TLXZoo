@@ -1,3 +1,4 @@
+import cv2
 import tensorlayerx as tlx
 from tlxzoo.module.pfld import PFLD
 
@@ -22,3 +23,15 @@ class FacialLandmarkDetection(tlx.nn.Module):
     def predict(self, inputs):
         self.set_eval()
         return self.backbone(inputs)
+
+
+def draw_landmarks(image, landmarks, radius=1, color=(0, 0, 255), normalized=True):
+    image = image.copy()
+    if normalized:
+        height, width = image.shape[:2]
+        landmarks = landmarks.copy()
+        landmarks[:, 0] *= width
+        landmarks[:, 1] *= height
+    for x, y in landmarks:
+        cv2.circle(image, (int(x), int(y)), radius, color)
+    return image

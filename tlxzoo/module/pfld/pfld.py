@@ -4,6 +4,8 @@ from tensorlayerx import nn
 
 def pfld_loss(landmarks, angle, landmark_gt, euler_angle_gt, attribute_gt):
     batchsize = tlx.get_tensor_shape(landmarks)[0]
+    landmarks = tlx.reshape(landmarks, (batchsize, -1))
+    landmark_gt = tlx.reshape(landmark_gt, (batchsize, -1))
 
     weight_angle = tlx.reduce_sum(1 - tlx.cos(angle - euler_angle_gt), axis=1)
 

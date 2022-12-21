@@ -1,12 +1,10 @@
 import os
 import re
 
-import cv2
+from tensorlayerx.vision.utils import load_image
 import numpy as np
 from scipy.io import loadmat
-
-from ...utils.registry import Registers
-from ..dataset import BaseDataSetDict, BaseDataSetMixin, Dataset
+from tensorlayerx.dataflow import Dataset
 
 
 def read_pts_file(path):
@@ -18,8 +16,21 @@ def read_pts_file(path):
     return landmarks
 
 
-class Face300W(Dataset, BaseDataSetMixin):
-    def __init__(self, root_path, image_paths_and_label_files, transforms=None, limit=None):
+class Face300WDataset(Dataset):
+    def __init__(self, root_path, split='train', transform=None):
+        if split == 'train':
+            image_paths_and_label_files = [
+                ('helen/trainset', 'Bounding Boxes/bounding_boxes_helen_trainset.mat'),
+                ('lfpw/trainset', 'Bounding Boxes/bounding_boxes_lfpw_trainset.mat'),
+                ('afw', 'Bounding Boxes/bounding_boxes_afw.mat')
+            ]
+        else:
+            image_paths_and_label_files = [
+                ('helen/testset', 'Bounding Boxes/bounding_boxes_helen_testset.mat'),
+                ('lfpw/testset', 'Bounding Boxes/bounding_boxes_lfpw_testset.mat'),
+                ('ibug', 'Bounding Boxes/bounding_boxes_ibug.mat')
+            ]
+        self.transform = transform
         self.image_filenames = []
         self.bboxes = []
         self.landmarks = []
@@ -41,39 +52,19 @@ class Face300W(Dataset, BaseDataSetMixin):
                 pts_filename = os.path.splitext(image_filename)[0] + '.pts'
                 self.landmarks.append(read_pts_file(pts_filename))
 
-        if limit:
-            self.image_filenames = self.image_filenames[:limit]
-            self.bboxes = self.bboxes[:limit]
-            self.landmarks = self.landmarks[:limit]
-
-        if transforms:
-            self.transforms = transforms
-        else:
-            self.transforms = []
 
     def __getitem__(self, index):
-        image = cv2.imread(self.image_filenames[index])
+        image = load_image(self.image_filenames[index])
         bbox = self.bboxes[index]
         landmark = self.landmarks[index]
-        return self.transform(image, (bbox, landmark))
+        data = {
+            'image': image,
+            'bbox': bbox,
+            'landmark': landmark
+        }
+        if self.transform:
+            data = self.transform(data)
+        return data
 
     def __len__(self):
         return len(self.image_filenames)
-
-
-@Registers.datasets.register("Face300W")
-class Face300WDataSetDict(BaseDataSetDict):
-    @classmethod
-    def load(cls, root_path, train_limit=None):
-        return cls({
-            "train": Face300W(root_path, [
-                ('helen/trainset', 'Bounding Boxes/bounding_boxes_helen_trainset.mat'),
-                ('lfpw/trainset', 'Bounding Boxes/bounding_boxes_lfpw_trainset.mat'),
-                ('afw', 'Bounding Boxes/bounding_boxes_afw.mat')
-            ], limit=train_limit),
-            "test": Face300W(root_path, [
-                ('helen/testset', 'Bounding Boxes/bounding_boxes_helen_testset.mat'),
-                ('lfpw/testset', 'Bounding Boxes/bounding_boxes_lfpw_testset.mat'),
-                ('ibug', 'Bounding Boxes/bounding_boxes_ibug.mat')
-            ])
-        })
