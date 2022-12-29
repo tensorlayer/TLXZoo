@@ -1,10 +1,8 @@
 from PIL import Image
 import PIL.Image
 import numpy as np
-import cv2
 import regex as re
 import json
-import tensorlayerx as tlx
 
 
 def get_pairs(word):
@@ -97,15 +95,6 @@ class TrOCRTransform(object):
         self.special_tokens = [self.bos_token, self.eos_token, self.sep_token,
                                self.cls_token,
                                self.unk_token, self.pad_token, self.mask_token]
-
-        super(TrOCRTransform, self).__init__(**kwargs)
-        self.is_train = True
-
-    def set_train(self):
-        self.is_train = True
-
-    def set_eval(self):
-        self.is_train = False
 
     def resize(self, image, size, resample=PIL.Image.BILINEAR):
         if isinstance(size, int):
@@ -277,23 +266,3 @@ class TrOCRTransform(object):
         labels = self.string_to_ids(text, max_length=self.max_length)
 
         return {"inputs": image}, labels
-
-    def collate_fn(self, data):
-        input_values = [i[0]["inputs"] for i in data]
-        texts = [i[1][1] for i in data]
-        input_ids = [i[1][0]["inputs"] for i in data]
-        attention_mask = [i[1][0]["attention_mask"] for i in data]
-
-        input_values = np.array(input_values)
-        input_ids = np.array(input_ids)
-        attention_mask = np.array(attention_mask)
-
-        length = np.max(np.sum(attention_mask, -1))
-        length = int(length)
-        input_ids = input_ids[:, :length]
-        attention_mask = attention_mask[:, :length]
-
-        return tlx.dataflow.dataloader.utils.default_convert(({"inputs": input_values}, {"inputs": input_ids,
-                                                                                         "attention_mask": attention_mask, "texts": texts}))
-
-

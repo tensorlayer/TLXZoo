@@ -1,9 +1,10 @@
-from tlxzoo.datasets import DataLoaders
+from tlxzoo.datasets import Synth90kDataset
 from tlxzoo.module.trocr.transform import TrOCRTransform
 import tensorlayerx as tlx
 from tlxzoo.vision.ocr import OpticalCharacterRecognition
 from tqdm import tqdm
 from jiwer import cer
+from tensorlayerx.dataflow import DataLoader
 
 
 def valid(model, test_dataset, limit=None):
@@ -85,23 +86,16 @@ class Trainer(tlx.model.Model):
 
 
 if __name__ == '__main__':
-    datasets = DataLoaders(
-        root_path="/home/xiaolong-xu/userdata/tensorlayerX/TLXZoo/iam/mjsynth/mnt/ramdisk/max/90kDICT32px/",
-        per_device_eval_batch_size=1,
-        per_device_train_batch_size=8,
-        data_name="synth90k",
-        train_ann_path="annotation_train.clear.txt",
-        val_ann_path="annotation_test.clear.txt",
-        num_workers=0)
-
     transform = TrOCRTransform(merges_file="./demo/vision/ocr/trocr/merges.txt",
                                vocab_file="./demo/vision/ocr/trocr/vocab.json", max_length=12)
-    datasets.register_transform_hook(transform)
+    train_dataset = Synth90kDataset(archive_path='./data/mjsynth/mnt/ramdisk/max/90kDICT32px/', split='train', transform=transform)
+    train_dataloader = DataLoader(train_dataset, batch_size=8)
+    test_dataset = Synth90kDataset(archive_path='./data/mjsynth/mnt/ramdisk/max/90kDICT32px/', split='test', transform=transform)
+    test_dataloader = DataLoader(test_dataset, batch_size=1)
 
     model = OpticalCharacterRecognition("trocr")
-    model.load_weights("./demo/vision/ocr/trocr/model.npz")
 
     optimizer = tlx.optimizers.Adam(lr=0.00001)
     trainer = Trainer(network=model, loss_fn=model.loss_fn, optimizer=optimizer, metrics=None)
-    trainer.train(n_epoch=1, train_dataset=datasets.train, test_dataset=datasets.test, print_freq=1,
-                  print_train_batch=1000)
+    trainer.train(n_epoch=1, train_dataset=train_dataloader, test_dataset=test_dataloader, print_freq=1,
+                  print_train_batch=False)
