@@ -81,7 +81,7 @@ def draw_on_image(image, x, y, rescale):
     return image
 
 
-def inference(image_tensor, model, image_dir, original_image_size):
+def inference(image_tensor, model, image, original_image_size):
     model.set_eval()
     pred_heatmap = model(image_tensor)
     keypoints_rescale = KeypointsRescaleToOriginal(input_image_height=256,
@@ -92,12 +92,8 @@ def inference(image_tensor, model, image_dir, original_image_size):
     batch_x_list, batch_y_list = get_final_preds(batch_heatmaps=pred_heatmap)
     keypoints_x = batch_x_list[0]
     keypoints_y = batch_y_list[0]
-    image = draw_on_image(image=cv2.imread(image_dir), x=keypoints_x, y=keypoints_y, rescale=keypoints_rescale)
-
-    # cv2.namedWindow("Pose Estimation", flags=cv2.WINDOW_NORMAL)
-    # cv2.imshow("Pose Estimation", image)
-    # cv2.waitKey(0)
-    cv2.imwrite("image.png", image)
+    image = draw_on_image(image=image, x=keypoints_x, y=keypoints_y, rescale=keypoints_rescale)
+    return image
 
 
 class KeypointsRescaleToOriginal(object):

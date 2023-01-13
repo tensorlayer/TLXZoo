@@ -1,25 +1,26 @@
-import numpy as np
-import cv2
-from ...utils.registry import Registers
-from ..dataset import BaseDataSetDict, Dataset, BaseDataSetMixin
-import tensorlayerx as tlx
 import contextlib
-import os
-from PIL import Image
 import copy
+import os
+
+import numpy as np
+import tensorlayerx as tlx
+from PIL import Image
+from pycocotools.coco import COCO
+from tensorlayerx.dataflow import Dataset
+from tensorlayerx.vision.utils import load_image
 
 
-class CocoDetection(Dataset, BaseDataSetMixin):
+class CocoDetectionDataset(Dataset):
     def __init__(
-        self, root, annFile, transforms=None, limit=None, image_format='pil'
+        self, root, split='train', transform=None, image_format='pil'
     ):
-        from pycocotools.coco import COCO
-        self.coco = COCO(annFile)
-        self.root = root
-        if transforms is not None:
-            self.transforms = transforms
+        if split == 'train':
+            ann_file = os.path.join(root, 'annotations/instances_train2017.json')
         else:
-            self.transforms = []
+            ann_file = os.path.join(root, 'annotations/instances_val2017.json')
+        self.coco = COCO(ann_file)
+        self.root = root
+        self.transform = transform
         self.ids = list(sorted(self.coco.imgs.keys()))
         # clear 0 label
         new_ids = []
@@ -30,19 +31,16 @@ class CocoDetection(Dataset, BaseDataSetMixin):
                 continue
             new_ids.append(id)
         self.ids = new_ids
-        if limit:
-            self.ids = self.ids[:limit]
         self.image_format = image_format
 
         print("load ids:", len(self.ids))
 
-        self.data_type = annFile.split("instances_")[-1].split(".json")[0]
-        super(CocoDetection, self).__init__()
+        self.data_type = ann_file.split("instances_")[-1].split(".json")[0]
 
     def _load_image(self, id: int):
         path = self.coco.loadImgs(id)[0]["file_name"]
         if self.image_format == 'opencv':
-            return cv2.imread(os.path.join(self.root, self.data_type, path))
+            return load_image(os.path.join(self.root, self.data_type, path))
         else:
             return Image.open(os.path.join(self.root, self.data_type, path)).convert('RGB')
 
@@ -54,29 +52,29 @@ class CocoDetection(Dataset, BaseDataSetMixin):
         image = self._load_image(id)
         target = self._load_target(id)
         path = self.coco.loadImgs(id)[0]["file_name"]
-        target = {'image_id': id, 'annotations': target, "path": os.path.join(self.root, self.data_type, path)}
+        data = {'image_id': id, 'annotations': target, "path": os.path.join(self.root, self.data_type, path), 'image': image}
 
-        image, target = self.transform(image, target)
+        if self.transform:
+            data = self.transform(data)
 
-        return image, target
+        return data
 
     def __len__(self) -> int:
         return len(self.ids)
 
 
-class CocoHumanPoseEstimation(Dataset, BaseDataSetMixin):
+class CocoHumanPoseEstimationDataset(Dataset):
     def __init__(
-        self, root, annFile, transforms=None, limit=None, image_format='pil'
+        self, root, split='train', transform=None, image_format='pil'
     ):
-        from pycocotools.coco import COCO
-        self.coco = COCO(annFile)
-        self.root = root
-        if transforms is not None:
-            self.transforms = transforms
+        if split == 'train':
+            ann_file = os.path.join(root, 'annotations/person_keypoints_train2017.json')
         else:
-            self.transforms = []
+            ann_file = os.path.join(root, 'annotations/person_keypoints_val2017.json')
+        self.coco = COCO(ann_file)
+        self.root = root
+        self.transform = transform
         self.ids = list(sorted(self.coco.imgs.keys()))
-        print(len(self.ids))
 
         new_ids = []
         for id in self.ids:
@@ -91,19 +89,16 @@ class CocoHumanPoseEstimation(Dataset, BaseDataSetMixin):
                 new_ids.append((id, index))
         self.ids = new_ids
 
-        if limit:
-            self.ids = self.ids[:limit]
         self.image_format = image_format
 
         print("load ids:", len(self.ids))
 
-        self.data_type = annFile.split("person_keypoints_")[-1].split(".json")[0]
-        super(CocoHumanPoseEstimation, self).__init__()
+        self.data_type = ann_file.split("person_keypoints_")[-1].split(".json")[0]
 
     def _load_image(self, id: int):
         path = self.coco.loadImgs(id)[0]["file_name"]
         if self.image_format == 'opencv':
-            return cv2.imread(os.path.join(self.root, self.data_type, path))
+            return load_image(os.path.join(self.root, self.data_type, path))
         else:
             return Image.open(os.path.join(self.root, self.data_type, path)).convert('RGB')
 
@@ -120,27 +115,15 @@ class CocoHumanPoseEstimation(Dataset, BaseDataSetMixin):
         text += " ".join([str(i) for i in target["bbox"]]) + " "
         text += " ".join([str(i) for i in target["keypoints"]]) + " "
 
-        target = {'image_id': id, 'annotations': target, "text": text.strip()}
+        data = {'image_id': id, 'annotations': target, "text": text.strip(), 'image': image}
 
-        image, target = self.transform(image, target)
+        if self.transform:
+             data = self.transform(data)
 
-        return image, {"target": target, "text": text.strip()}
+        return data
 
     def __len__(self) -> int:
         return len(self.ids)
-
-
-@Registers.datasets.register("Coco")
-class CocoDataSetDict(BaseDataSetDict):
-    @classmethod
-    def load(cls, root_path, train_ann_path, val_ann_path, train_limit=None, image_format='pil'):
-
-        if "person_keypoints_" in train_ann_path:
-            return cls({"train": CocoHumanPoseEstimation(root_path, train_ann_path, limit=train_limit, image_format=image_format),
-                        "test": CocoHumanPoseEstimation(root_path, val_ann_path, image_format=image_format)})
-        else:
-            return cls({"train": CocoDetection(root_path, train_ann_path, limit=train_limit, image_format=image_format),
-                        "test": CocoDetection(root_path, val_ann_path, image_format=image_format)})
 
 
 class CocoEvaluator(object):

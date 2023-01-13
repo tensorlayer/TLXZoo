@@ -1,9 +1,14 @@
-from tlxzoo.datasets import DataLoaders
 import tensorlayerx as tlx
-from tlxzoo.vision.human_pose_estimation import HumanPoseEstimation
-from tlxzoo.module.hrnet import HRNetTransform, PCK
-from tqdm import tqdm
+from tensorlayerx.dataflow import DataLoader
 from tensorlayerx.optimizers.lr import LRScheduler
+from tensorlayerx.vision.transforms import Compose
+from tqdm import tqdm
+
+from tlxzoo.datasets import CocoHumanPoseEstimationDataset
+from tlxzoo.module.hrnet import *
+from tlxzoo.vision.human_pose_estimation import HumanPoseEstimation
+
+
 pck = PCK()
 
 
@@ -33,20 +38,20 @@ class Trainer(tlx.model.Model):
             start_time = time.time()
 
             train_loss, train_acc, n_iter = 0, 0, 0
-            for X_batch, y_batch in train_dataset:
+            for batch in train_dataset:
                 network.set_train()
 
                 with tf.GradientTape() as tape:
                     # compute outputs
-                    _logits = network(X_batch)
-                    _loss_ce = loss_fn(_logits, target=y_batch["target"][0], target_weight=y_batch["target"][1])
+                    _logits = network(batch['image'])
+                    _loss_ce = loss_fn(_logits, target=batch['target'], target_weight=batch['target_weight'])
 
                 grad = tape.gradient(_loss_ce, train_weights)
 
                 optimizer.apply_gradients(zip(grad, train_weights))
                 train_loss += _loss_ce
 
-                _, avg_accuracy, _, _ = pck(network_output=_logits, target=y_batch["target"][0])
+                _, avg_accuracy, _, _ = pck(network_output=_logits, target=batch['target'])
                 train_acc += avg_accuracy
 
                 n_iter += 1
@@ -55,16 +60,12 @@ class Trainer(tlx.model.Model):
                     print("Epoch {} of {} {} took {}".format(epoch + 1, n_epoch, n_iter, time.time() - start_time))
                     print("   train loss: {}".format(train_loss / n_iter))
                     print("   train acc: {}".format(train_acc / n_iter))
-                    print("   learning rate: ", optimizer.lr())
+                    print("   learning rate: ", optimizer.lr().numpy())
 
             if epoch + 1 == 1 or (epoch + 1) % print_freq == 0:
                 print("Epoch {} of {} took {}".format(epoch + 1, n_epoch, time.time() - start_time))
                 print("   train loss: {}".format(train_loss / n_iter))
                 print("   train acc: {}".format(train_acc / n_iter))
-
-            if (epoch + 1) % 5 == 0:
-                valid(network, test_dataset)
-                model.save_weights("./demo/vision/human_pose_estimation/model.npz")
 
             optimizer.lr.step()
 
@@ -85,16 +86,17 @@ class EpochDecay(LRScheduler):
 
 
 if __name__ == '__main__':
-    datasets = DataLoaders(root_path="./",
-                           per_device_eval_batch_size=14,
-                           per_device_train_batch_size=14,
-                           data_name="Coco",
-                           train_ann_path="./annotations/person_keypoints_train2017.json",
-                           val_ann_path="./annotations/person_keypoints_val2017.json",
-                           num_workers=0)
-
-    transform = HRNetTransform()
-    datasets.register_transform_hook(transform)
+    transform = Compose([
+        Gather(),
+        Crop(),
+        Resize((256, 256)),
+        Normalize(),
+        GenerateTarget()
+    ])
+    train_dataset = CocoHumanPoseEstimationDataset(root='./data/coco2017', split='train', transform=transform)
+    train_dataloader = DataLoader(train_dataset, batch_size=2)
+    test_dataset = CocoHumanPoseEstimationDataset(root='./data/coco2017', split='test', transform=transform)
+    test_dataloader = DataLoader(test_dataset, batch_size=2)
 
     model = HumanPoseEstimation("hrnet")
 
@@ -103,7 +105,7 @@ if __name__ == '__main__':
     # optimizer = tlx.optimizers.SGD(lr=scheduler)
 
     trainer = Trainer(network=model, loss_fn=model.loss_fn, optimizer=optimizer, metrics=None)
-    trainer.train(n_epoch=80, train_dataset=datasets.train, test_dataset=datasets.test, print_freq=1,
-                  print_train_batch=True)
+    trainer.train(n_epoch=80, train_dataset=train_dataloader, test_dataset=test_dataloader, print_freq=1,
+                  print_train_batch=False)
 
-    model.save_weights("./demo/vision/human_pose_estimation/model.npz")
+    model.save_weights("./demo/vision/human_pose_estimation/hrnet/model.npz")

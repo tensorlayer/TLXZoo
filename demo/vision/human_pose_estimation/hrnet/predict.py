@@ -1,26 +1,24 @@
 import tensorlayerx as tlx
+from tensorlayerx.vision.transforms import *
+from tensorlayerx.vision.utils import load_image, save_image
 from tlxzoo.vision.human_pose_estimation import HumanPoseEstimation, inference
-from tlxzoo.module.hrnet import HRNetTransform
-from PIL import Image
-import numpy as np
-
 
 if __name__ == '__main__':
-    transform = HRNetTransform()
-
     model = HumanPoseEstimation("hrnet")
     model.load_weights("./demo/vision/human_pose_estimation/hrnet/model.npz")
     model.set_eval()
 
-    path = "./coco2017/0.1/val2017/000000527784.jpg"
-    image = Image.open(path).convert('RGB')
-    image_height, image_width = image.height, image.width
-    image = np.array(image, dtype=np.float32)
-    image = image / 255.0
-    image = transform.resize(image, (transform.size[0], transform.size[1]))
+    path = "./demo/vision/human_pose_estimation/hrnet/hrnet.jpg"
+    image = load_image(path)
+    image_height, image_width = image.shape[:2]
+    
+    transform = Compose([
+        Resize((256, 256)),
+        Normalize(mean=(0, 0, 0), std=(255.0, 255.0, 255.0)),
+        ToTensor()
+    ])
+    image_tensor = transform(image)
+    image_tensor = tlx.expand_dims(image_tensor, 0)
 
-    image = tlx.convert_to_tensor([image])
-
-    inference(image_tensor=image, model=model, image_dir=path, original_image_size=[image_height, image_width])
-
-
+    image = inference(image_tensor=image_tensor, model=model, image=image, original_image_size=[image_height, image_width])
+    save_image(image, 'result.jpg', './demo/vision/human_pose_estimation/hrnet')
