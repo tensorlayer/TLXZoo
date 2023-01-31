@@ -1,21 +1,35 @@
-import cv2
 import tensorlayerx as tlx
-from tlxzoo.module.ppyoloe import PPYOLOETransform
+from tensorlayerx.vision.transforms import Compose
+from tensorlayerx.vision.utils import load_image
+
+from tlxzoo.module.ppyoloe import *
 from tlxzoo.vision.object_detection import ObjectDetection
 
-if __name__ == '__main__':
-    transform = PPYOLOETransform()
-    transform.set_eval()
 
+if __name__ == '__main__':
     model = ObjectDetection(backbone="ppyoloe_s", num_classes=80, data_format='channels_first')
-    model.load_weights("./model.npz")
+    model.load_weights("demo/vision/object_detection/ppyoloe/model.npz")
     model.set_eval()
     model.backbone.set_eval()
 
-    image_path = "./image.png"
-    image = cv2.imread(image_path)
-
-    image, _ = transform(image, None)
+    image_path = "demo/vision/object_detection/detr/000000039769.jpeg"
+    image = load_image(image_path)
+    transform = Compose([
+        ResizeImage(
+            target_size=640
+        ),
+        NormalizeImage(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225],
+            is_scale=True,
+            is_channel_first=False
+        ),
+        Permute(
+            to_bgr=False,
+            channel_first=True
+        )
+    ])
+    image = transform({'image': image})['image']
 
     inputs = tlx.convert_to_tensor([image])
 

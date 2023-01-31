@@ -1,23 +1,25 @@
-from tlxzoo.datasets import DataLoaders
-from tlxzoo.module.detr import DetrTransform, post_process
-from tlxzoo.vision.object_detection import ObjectDetection
-from tlxzoo.datasets.coco import CocoEvaluator
 import tensorlayerx as tlx
 from PIL import Image
+from tensorlayerx.vision.transforms import Compose
+
+from tlxzoo.module.detr import *
+from tlxzoo.vision.object_detection import ObjectDetection
 
 
 if __name__ == '__main__':
-    transform = DetrTransform()
-
     model = ObjectDetection(backbone="detr")
     model.load_weights("demo/vision/object_detection/detr/model.npz")
     model.set_eval()
 
-    image_path = "./000000039769.jpeg"
+    image_path = "demo/vision/object_detection/detr/000000039769.jpeg"
     image = Image.open(image_path).convert('RGB')
     orig_size = image.size
 
-    image, _ = transform(image, None)
+    transform = Compose([
+        Resize(size=800, max_size=1333),
+        Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+    ])
+    image, _ = transform((image, None))
 
     inputs = tlx.convert_to_tensor([image])
 

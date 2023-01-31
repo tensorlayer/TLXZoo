@@ -1,16 +1,19 @@
-from tlxzoo.datasets import DataLoaders
-from tlxzoo.module.detr import DetrTransform, post_process
-from tlxzoo.vision.object_detection import ObjectDetection
-from tlxzoo.datasets.coco import CocoEvaluator
 import tensorlayerx as tlx
+from tensorlayerx.dataflow import DataLoader
+from tensorlayerx.vision.transforms import Compose
+
+from tlxzoo.datasets import CocoDetectionDataset
+from tlxzoo.datasets.coco import CocoEvaluator
+from tlxzoo.module.detr import *
+from tlxzoo.vision.object_detection import ObjectDetection
 
 
-def valid(model, data_loaders):
+def valid(model, data_loader):
     from tqdm import tqdm
-    coco_evaluator = CocoEvaluator(data_loaders.dataset_dict["test"].coco, "bbox")
+    coco_evaluator = CocoEvaluator(data_loader.dataset.coco, "bbox")
     model.set_eval()
 
-    for idx, batch in enumerate(tqdm(data_loaders.test)):
+    for idx, batch in enumerate(tqdm(data_loader)):
         inputs = batch[0]["inputs"]
         pixel_mask = batch[0]["pixel_mask"]
         labels = batch[1]
@@ -65,31 +68,26 @@ class Trainer(tlx.model.Model):
 
 
 if __name__ == '__main__':
-    transform = DetrTransform()
-    # download coco from https://cocodataset.org/#download
-    coco = DataLoaders("Coco", per_device_train_batch_size=1, per_device_eval_batch_size=1,
-                       root_path="./adhub/coco2017/0.1",
-                       train_ann_path="./adhub/coco2017/0.1/annotations/instances_train2017.json",
-                       val_ann_path="./adhub/coco2017/0.1/annotations/instances_val2017.json",
-                       num_workers=0,
-                       collate_fn=transform.collate_fn,
-                       train_limit=10,
-                       )
-
-    coco.register_transform_hook(transform)
+    transform = Compose([
+        LabelFormatConvert(),
+        Resize(size=800, max_size=1333),
+        Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+    ])
+    train_dataset = CocoDetectionDataset(root='./data/coco2017', split='train', transform=transform)
+    train_dataloader = DataLoader(train_dataset, batch_size=2, collate_fn=collate_fn)
+    test_dataset = CocoDetectionDataset(root='./data/coco2017', split='test', transform=transform)
+    test_dataloader = DataLoader(test_dataset, batch_size=2, collate_fn=collate_fn)
 
     model = ObjectDetection(backbone="detr")
-
-    model.load_weights("demo/vision/object_detection/detr/model.npz")
 
     optimizer = tlx.optimizers.Adam(lr=1e-6)
     metric = None
 
     trainer = Trainer(network=model, loss_fn=model.loss_fn, optimizer=optimizer, metrics=metric)
-    trainer.train(n_epoch=1, train_dataset=coco.train, test_dataset=coco.test, print_freq=1,
+    trainer.train(n_epoch=1, train_dataset=train_dataloader, test_dataset=test_dataloader, print_freq=1,
                   print_train_batch=True)
 
-    valid(model, coco)
+    valid(model, test_dataloader)
 
 
 

@@ -481,6 +481,7 @@ class DetrLoss(tlx.nn.Module):
         weight = tlx.gather(self.empty_weight, target_classes)
         loss = tlx.losses.softmax_cross_entropy_with_logits(tlx.reshape(src_logits, [-1, (self.num_classes + 1)]),
                                                             tlx.reshape(target_classes, [-1]), reduction="none")
+        loss = tlx.reshape(loss, (src_logits.shape[0], -1))
         loss *= weight
 
         loss_ce = tlx.reduce_mean(loss)

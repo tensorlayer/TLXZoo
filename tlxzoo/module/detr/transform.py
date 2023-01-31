@@ -3,33 +3,11 @@ import tensorlayerx as tlx
 from PIL import Image
 
 
-class DetrTransform(object):
-    def __init__(
-            self,
-            do_resize=True,
-            do_normalize=True,
-            size=800,
-            max_size=1333,
-            mean=(0.485, 0.456, 0.406),
-            std=(0.229, 0.224, 0.225),
-            **kwargs
-    ):
-        self.do_resize = do_resize
-        self.do_normalize = do_normalize
-        self.size = size
-        self.max_size = max_size
-        self.mean = mean
-        self.std = std
-
-        self.is_train = True
-
-        super(DetrTransform, self).__init__(**kwargs)
-
-    def set_train(self):
-        self.is_train = True
-
-    def set_eval(self):
-        self.is_train = False
+class LabelFormatConvert(object):
+    def __call__(self, data):
+        image, label = self.prepare_coco_detection(data['image'], data['annotations'])
+        label['image_id'] = data['image_id']
+        return image, label
 
     def prepare_coco_detection(self, image, anno, return_segmentation_masks=True):
         """
@@ -113,6 +91,16 @@ class DetrTransform(object):
 
         return masks
 
+
+class Resize(object):
+    def __init__(self, size, max_size):
+        self.size = size
+        self.max_size = max_size
+        
+    def __call__(self, data):
+        image, label = self._resize(data[0], self.size, data[1], self.max_size)
+        return image, label
+
     def resize(self, image, size, resample=Image.BILINEAR):
         if isinstance(size, int):
             size = (size, size)
@@ -191,6 +179,16 @@ class DetrTransform(object):
 
         return rescaled_image, target
 
+
+class Normalize(object):
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+        
+    def __call__(self, data):
+        image, label = self._normalize(data[0], self.mean, self.std, data[1])
+        return image, label
+
     def to_numpy_array(self, image, rescale=None, channel_first=False):
 
         if isinstance(image, Image.Image):
@@ -245,73 +243,52 @@ class DetrTransform(object):
 
         return image, target
 
-    def collate_fn(self, data):
-        images = [i[0] for i in data]
-        padded_images, pixel_mask = self.pad_and_create_pixel_mask(images)
-        new_data = []
-        labels = []
-        for i, j, k in zip(data, padded_images, pixel_mask):
-            labels.append(i[1])
-            new_data.append({"inputs": j, "pixel_mask": k})
-        if len(data) >= 2:
-            return tlx.dataflow.dataloader.utils.default_collate(new_data), labels
-        else:
-            data = {}
-            for i, j in new_data[0].items():
-                data[i] = np.array([j])
-            # label = {}
-            # for i, j in labels[0].items():
-            #     label[i] = np.array([j])
-            return tlx.dataflow.dataloader.utils.default_convert(data), labels
 
-    def __call__(self, image, label, *args, **kwargs):
-        if label is not None:
-            image_id = label["image_id"]
-            label = label["annotations"]
-            image, target = self.prepare_coco_detection(image, label)
-        else:
-            image_id = None
-            target = None
-        if self.do_resize and self.size is not None:
-            image, target = self._resize(image=image, target=target, size=self.size,
-                                         max_size=self.max_size)
+def collate_fn(data):
+    images = [i[0] for i in data]
+    padded_images, pixel_mask = pad_and_create_pixel_mask(images)
+    new_data = []
+    labels = []
+    for i, j, k in zip(data, padded_images, pixel_mask):
+        labels.append(i[1])
+        new_data.append({"inputs": j, "pixel_mask": k})
+    if len(data) >= 2:
+        return tlx.dataflow.dataloader.utils.default_collate(new_data), labels
+    else:
+        data = {}
+        for i, j in new_data[0].items():
+            data[i] = np.array([j])
+        # label = {}
+        # for i, j in labels[0].items():
+        #     label[i] = np.array([j])
+        return tlx.dataflow.dataloader.utils.default_convert(data), labels
 
-        if self.do_normalize:
-            image, target = self._normalize(
-                image=image, mean=self.mean, std=self.std, target=target
-            )
+def _max_by_axis(the_list):
+    maxes = the_list[0]
+    for sublist in the_list[1:]:
+        for index, item in enumerate(sublist):
+            maxes[index] = max(maxes[index], item)
+    return maxes
 
-        if image_id:
-            target["image_id"] = image_id
+def pad_and_create_pixel_mask(
+    pixel_values_list
+):
 
-        return image, target
+    max_size = _max_by_axis([list(image.shape) for image in pixel_values_list])
+    h, w, c = max_size
+    padded_images = []
+    pixel_mask = []
+    for image in pixel_values_list:
+        # create padded image
+        padded_image = np.zeros((h, w, c), dtype=np.float32)
+        padded_image[: image.shape[0], : image.shape[1], : image.shape[2]] = np.copy(image)
+        padded_images.append(padded_image)
+        # create pixel mask
+        mask = np.zeros((h, w), dtype=bool)
+        mask[: image.shape[0], : image.shape[1]] = True
+        pixel_mask.append(mask)
 
-    def _max_by_axis(self, the_list):
-        maxes = the_list[0]
-        for sublist in the_list[1:]:
-            for index, item in enumerate(sublist):
-                maxes[index] = max(maxes[index], item)
-        return maxes
-
-    def pad_and_create_pixel_mask(
-        self, pixel_values_list
-    ):
-
-        max_size = self._max_by_axis([list(image.shape) for image in pixel_values_list])
-        h, w, c = max_size
-        padded_images = []
-        pixel_mask = []
-        for image in pixel_values_list:
-            # create padded image
-            padded_image = np.zeros((h, w, c), dtype=np.float32)
-            padded_image[: image.shape[0], : image.shape[1], : image.shape[2]] = np.copy(image)
-            padded_images.append(padded_image)
-            # create pixel mask
-            mask = np.zeros((h, w), dtype=bool)
-            mask[: image.shape[0], : image.shape[1]] = True
-            pixel_mask.append(mask)
-
-        return padded_images, pixel_mask
+    return padded_images, pixel_mask
 
 
 def corners_to_center_format(x):
