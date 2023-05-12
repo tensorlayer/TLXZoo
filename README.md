@@ -83,3 +83,8 @@ python demo/vision/image_classification/vgg/predict.py
 
 ### Automatic Speech Recognition
 - [wav2vec](demo/speech/automatic_speech_recognition/wav2vec)
+
+## Graph
+
+### Node Classification
+- [GCN](tlxzoo/module/gcn/gcn.py)
