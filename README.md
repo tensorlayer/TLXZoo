@@ -39,6 +39,8 @@ python demo/vision/image_classification/vgg/predict.py
 
 # Scenes and Models
 
+TLXZOO currently covers 4 fields and 12 tasks. They ares listed below:
+
 ## Vision
 
 ### Object Detection
