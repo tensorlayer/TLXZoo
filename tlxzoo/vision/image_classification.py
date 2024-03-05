@@ -3,7 +3,7 @@ import tensorlayerx as tlx
 
 
 class ImageClassification(tlx.nn.Module):
-    def __init__(self, backbone, l2_weights=False, **kwargs):
+    def __init__(self, backbone, **kwargs):
         super(ImageClassification, self).__init__()
         if backbone in ["vgg11", "vgg13", "vgg16", "vgg19"]:
             layer_type = kwargs.pop("layer_type", backbone)
@@ -21,22 +21,8 @@ class ImageClassification(tlx.nn.Module):
         else:
             raise ValueError(f"tlxzoo don`t support {backbone}")
 
-        self.train_weights = self.trainable_weights
-        self.li_regularizer = tlx.losses.li_regularizer(0.00001)
-
-        self.l2_weights = []
-        if l2_weights:
-            for w in self.train_weights:
-                if w.name.startswith("conv") and len(w.shape) >= 2:
-                    self.l2_weights.append(w)
-                if w.name.startswith("fc1") and len(w.shape) >= 2:
-                    self.l2_weights.append(w)
-
     def loss_fn(self, output, target, name="", **kwargs):
         loss = tlx.losses.softmax_cross_entropy_with_logits(output, target)
-
-        for w in self.l2_weights:
-            loss += self.li_regularizer(w)
         return loss
 
     def forward(self, inputs):
@@ -46,9 +32,3 @@ class ImageClassification(tlx.nn.Module):
         self.set_eval()
         out = self.backbone(inputs)
         return tlx.argmax(out, axis=-1)
-
-
-
-
-
-

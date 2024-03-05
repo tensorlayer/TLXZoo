@@ -3,7 +3,7 @@ import os
 
 from scipy.io import loadmat
 from tensorlayerx.dataflow import Dataset
-from tensorlayerx.vision.utils import load_image
+from tensorlayerx.vision.transforms.utils import load_image
 
 
 class ImagenetDataset(Dataset):

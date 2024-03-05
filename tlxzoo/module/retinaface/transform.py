@@ -1,10 +1,13 @@
-import cv2
-import numpy as np
 import math
 from itertools import product as product
+
+import cv2
+import numpy as np
 import tensorlayerx as tlx
-from .non_max_suppression import non_max_suppression_np
 from tensorlayerx.utils.prepro import imresize
+from tensorlayerx.vision.transforms.utils import load_image
+
+from .non_max_suppression import non_max_suppression_np
 
 
 class RetinaFaceTransform(object):
@@ -96,10 +99,9 @@ class RetinaFaceTransform(object):
         return outputs
 
     def __call__(self, image_path, label):
-        img_raw = cv2.imread(image_path)
+        img_raw = load_image(image_path)
         img_height, img_width, _ = img_raw.shape
         img = np.float32(img_raw.copy())
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         if self.is_train:
             img = _pad_to_square(img)

@@ -1,7 +1,7 @@
 import os
 import re
 
-from tensorlayerx.vision.utils import load_image
+from tensorlayerx.vision.transforms.utils import load_image
 import numpy as np
 from scipy.io import loadmat
 from tensorlayerx.dataflow import Dataset
