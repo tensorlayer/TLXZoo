@@ -45,7 +45,7 @@ class Trainer(tlx.model.Model):
                 grad = tape.gradient(_loss_ce, train_weights)
 
                 optimizer.apply_gradients(zip(grad, train_weights))
-                train_loss += _loss_ce
+                train_loss += _loss_ce.numpy().item()
 
                 n_iter += 1
 
