@@ -286,9 +286,9 @@ class Wav2Vec2WeightNormConv1D(tlx.nn.Conv1d):
         self.filter_axis = 2
         self.kernel_norm_axes = tlx.constant([0, 1], dtype=tlx.int32)
 
-        self.weight_v = tlx.Variable(tlx.transpose(self.W), name=name + "/weight_v", trainable=True)
-        del self.W
-        # self.weight_v = self.W
+        self.weight_v = tlx.Variable(tlx.transpose(self.filters), name=name + "/weight_v", trainable=True)
+        del self.filters
+        # self.weight_v = self.filters
 
         kernel_norm = tlx.sqrt(tlx.reduce_sum(tlx.square(self.weight_v), axis=self.kernel_norm_axes))
 
@@ -301,7 +301,7 @@ class Wav2Vec2WeightNormConv1D(tlx.nn.Conv1d):
     def _normalize_kernel(self):
         """Generate normalized weights."""
         kernel = tlx.l2_normalize(self.weight_v, axis=self.kernel_norm_axes) * tlx.transpose(self.weight_g)
-        self.W = tlx.transpose(kernel)
+        self.filters = tlx.transpose(kernel)
 
     def forward(self, inputs):
         self._normalize_kernel()

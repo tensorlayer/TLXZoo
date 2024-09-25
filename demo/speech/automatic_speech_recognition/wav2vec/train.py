@@ -70,7 +70,6 @@ if __name__ == '__main__':
     libri_speech.register_transform_hook(transform)
 
     model = AutomaticSpeechRecognition(backbone="wav2vec")
-    model.load_weights("./demo/speech/automatic_speech_recognition/wav2vec/model.npz")
 
     optimizer = tlx.optimizers.Adam(lr=0.0001)
     metric = None
