@@ -3,9 +3,30 @@ from tlxzoo.module.wav2vec2 import Wav2Vec2Transform
 from tlxzoo.speech.automatic_speech_recognition import AutomaticSpeechRecognition
 import tensorlayerx as tlx
 import numpy as np
+import os
 
 
-if __name__ == '__main__':
+def device_info():
+    found = False
+    if not found and os.system("npu-smi info > /dev/null 2>&1") == 0:
+        cmd = "npu-smi info"
+        found = True
+    elif not found and os.system("nvidia-smi > /dev/null 2>&1") == 0:
+        cmd = "nvidia-smi"
+        found = True
+    elif not found and os.system("ixsmi > /dev/null 2>&1") == 0:
+        cmd = "ixsmi"
+        found = True
+    elif not found and os.system("cnmon > /dev/null 2>&1") == 0:
+        cmd = "cnmon"
+        found = True
+    
+    os.system(cmd)
+    cmd = "lscpu"
+    os.system(cmd)
+    
+if __name__ == "__main__":
+    device_info()
     transform = Wav2Vec2Transform(vocab_file="./demo/speech/automatic_speech_recognition/wav2vec/vocab.json")
 
     model = AutomaticSpeechRecognition(backbone="wav2vec")

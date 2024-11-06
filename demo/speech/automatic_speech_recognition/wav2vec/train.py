@@ -2,6 +2,7 @@ from tlxzoo.datasets import DataLoaders
 from tlxzoo.module.wav2vec2 import Wav2Vec2Transform
 from tlxzoo.speech.automatic_speech_recognition import AutomaticSpeechRecognition
 import tensorlayerx as tlx
+import os
 
 
 def valid(model, test_dataset, transform):
@@ -45,7 +46,7 @@ class Trainer(tlx.model.Model):
                 grad = tape.gradient(_loss_ce, train_weights)
 
                 optimizer.apply_gradients(zip(grad, train_weights))
-                train_loss += _loss_ce.numpy().item()
+                train_loss += _loss_ce
 
                 n_iter += 1
 
@@ -58,7 +59,27 @@ class Trainer(tlx.model.Model):
                 print("   train loss: {}".format(train_loss / n_iter))
 
 
-if __name__ == '__main__':
+def device_info():
+    found = False
+    if not found and os.system("npu-smi info > /dev/null 2>&1") == 0:
+        cmd = "npu-smi info"
+        found = True
+    elif not found and os.system("nvidia-smi > /dev/null 2>&1") == 0:
+        cmd = "nvidia-smi"
+        found = True
+    elif not found and os.system("ixsmi > /dev/null 2>&1") == 0:
+        cmd = "ixsmi"
+        found = True
+    elif not found and os.system("cnmon > /dev/null 2>&1") == 0:
+        cmd = "cnmon"
+        found = True
+    
+    os.system(cmd)
+    cmd = "lscpu"
+    os.system(cmd)
+    
+if __name__ == "__main__":
+    device_info()
     transform = Wav2Vec2Transform(vocab_file="./demo/speech/automatic_speech_recognition/wav2vec/vocab.json")
     # download dataset from https://www.openslr.org/12
     libri_speech = DataLoaders("LibriSpeech",
